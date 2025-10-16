@@ -1,0 +1,32 @@
+# Android Studio
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# ビルド生成物
+*/build/
+app/build/
+
+# 機密情報 (重要!)
+google-services.json
+app/google-services.json
+
+# APK/Bundle
+*.apk
+*.aab
+*.ap_
+
+# Kotlin
+.kotlin/
