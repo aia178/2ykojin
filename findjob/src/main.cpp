@@ -1,14 +1,11 @@
+#include <Arduino.h>  // 追加
 #include <WiFi.h>
-
-const char* ssid = "ECCcomp3"; //ssid
-const char* password = "4Emah5LdS"; //password
+#include "config.h"
 
 void setup()
 {
     Serial.begin(115200);
     delay(10);
-
-    // We start by connecting to a WiFi network
 
     Serial.println();
     Serial.println();

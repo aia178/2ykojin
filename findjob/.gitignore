@@ -14,3 +14,6 @@ build/
 
 # ローカル設定
 platformio.ini.local
+
+findjob\.gitignore
+src/config.h
