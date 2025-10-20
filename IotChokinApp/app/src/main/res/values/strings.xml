@@ -1,3 +1,36 @@
 <resources>
-    <string name="app_name">IotChokinApp</string>
+    <string name="app_name">SaveWish</string>
+    <string name="LogonameSaveWish">SaveWish</string>
+    <string name="logo_subtitle">IoT貯金箱</string>
+
+    <!-- レイアウト用ラベル -->
+    <string name="label_current_goal">現在の目標</string>
+    <string name="label_current_savings">現在の貯金額</string>
+    <string name="label_target_amount">目標金額</string>
+    <string name="label_remaining">残り</string>
+    <string name="label_all_goals">すべての目標</string>
+    <string name="label_add_goal">目標を追加</string>
+    <string name="label_statistics">統計情報</string>
+    <string name="label_monthly_savings">今月の貯金</string>
+    <string name="label_total_savings">総貯金額</string>
+
+    <!-- サンプルデータ -->
+    <string name="sample_goal_title">Nintendo Switch</string>
+    <string name="sample_goal_title_2">旅行資金</string>
+    <string name="sample_goal_title_3">新しいPC</string>
+    <string name="sample_current_amount">¥15,000</string>
+    <string name="sample_target_amount">¥30,000</string>
+    <string name="sample_remaining">¥15,000</string>
+    <string name="sample_achievement_rate">50%</string>
+    <string name="sample_achievement_rate_2">25%</string>
+    <string name="sample_achievement_rate_3">10%</string>
+    <string name="sample_monthly_amount">¥5,000</string>
+    <string name="sample_total_amount">¥20,000</string>
+
+    <!-- ボタン -->
+    <string name="btn_history">履歴</string>
+    <string name="btn_new_goal">新しい目標</string>
+
+    <!-- コンテンツ説明 -->
+    <string name="product_image_description">商品画像</string>
 </resources>
