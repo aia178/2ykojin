@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/app/src/main/res/drawable/ic_arrow_back.xml">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/app/src/main/res/drawable/ic_arrow_back.xml" />
+              <option name="originalContent" value="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&#10;    android:width=&quot;24dp&quot;&#10;    android:height=&quot;24dp&quot;&#10;    android:viewportWidth=&quot;24&quot;&#10;    android:viewportHeight=&quot;24&quot;&#10;    android:tint=&quot;#FFFFFF&quot;&#10;    android:autoMirrored=&quot;true&quot;&gt;&#10;  &lt;path&#10;      android:fillColor=&quot;@android:color/white&quot;&#10;      android:pathData=&quot;M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z&quot;/&gt;&#10;&lt;/vector&gt;&#10;" />
+              <option name="updatedContent" value="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&#10;    android:width=&quot;24dp&quot;&#10;    android:height=&quot;24dp&quot;&#10;    android:viewportWidth=&quot;24&quot;&#10;    android:viewportHeight=&quot;24&quot;&#10;    android:tint=&quot;#FFFFFF&quot;&#10;    android:autoMirrored=&quot;true&quot;&gt;&#10;  &lt;path&#10;      android:fillColor=&quot;@android:color/white&quot;&#10;      android:pathData=&quot;M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z&quot;/&gt;&#10;&lt;/vector&gt;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

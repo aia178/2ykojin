@@ -14,6 +14,22 @@
     <string name="label_monthly_savings">今月の貯金</string>
     <string name="label_total_savings">総貯金額</string>
 
+    <!-- 新しい目標画面 -->
+    <string name="title_new_goal">新しい目標</string>
+    <string name="btn_back">戻る</string>
+    <string name="tab_rakuten_search">楽天で検索</string>
+    <string name="tab_custom_goal">カスタム目標</string>
+    <string name="label_search_product">商品を検索</string>
+    <string name="hint_search_product">商品名を入力</string>
+    <string name="btn_search">検索</string>
+    <string name="label_search_results">検索結果</string>
+    <string name="label_custom_goal_info">目標の情報</string>
+    <string name="hint_goal_name">目標名（例：旅行資金、新しいPC）</string>
+    <string name="hint_target_amount">目標金額</string>
+    <string name="btn_select_image">画像を選択（任意）</string>
+    <string name="image_preview_description">選択された画像</string>
+    <string name="btn_save_goal">目標を保存</string>
+
     <!-- サンプルデータ -->
     <string name="sample_goal_title">Nintendo Switch</string>
     <string name="sample_goal_title_2">旅行資金</string>
