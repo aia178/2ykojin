@@ -178,12 +178,68 @@
                         android:textStyle="bold"
                         android:letterSpacing="0.1" />
 
+                    <!-- 追加: ローディング -->
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/progressSearch"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_gravity="center_horizontal"
+                        android:visibility="gone" />
+
+                    <!-- 追加: 空表示 -->
+                    <LinearLayout
+                        android:id="@+id/stateEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="検索結果がありません"
+                            android:textColor="#757575"
+                            android:textSize="14sp"
+                            android:paddingTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- 追加: エラー表示 -->
+                    <LinearLayout
+                        android:id="@+id/stateError"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="通信エラーが発生しました"
+                            android:textColor="#757575"
+                            android:textSize="14sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRetry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="再試行"
+                            style="@style/Widget.Material3.Button.FilledTonalButton" />
+                    </LinearLayout>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvSearchResults"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:minHeight="200dp" />
+                        android:minHeight="200dp"
+                        android:clipToPadding="false"
+                        tools:listitem="@layout/item_product" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -55,4 +55,13 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
 
+    // HTTP通信用（Retrofit）
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // 画像読み込み用（Coil）
+    implementation("io.coil-kt:coil:2.5.0")
+
+    // コルーチン（非同期処理用）
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }

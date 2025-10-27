@@ -30,3 +30,6 @@ app/google-services.json
 
 # Kotlin
 .kotlin/
+
+# API Keys and Secrets
+**/Config.kt
