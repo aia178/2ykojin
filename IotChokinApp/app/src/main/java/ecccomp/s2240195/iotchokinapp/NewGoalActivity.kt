@@ -98,7 +98,7 @@ class NewGoalActivity : AppCompatActivity() {
 
     private fun searchProducts(keyword: String) {
         // API呼び出し
-        val call = SEARCH_SERVICE.apiService.searchItem(
+        val call = RakutenApiClient.apiService.searchItem(
             applicationId = Config.APPLICATION_ID,
             keyword = keyword,
             hits = 30,
