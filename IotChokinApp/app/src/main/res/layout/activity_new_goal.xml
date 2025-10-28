@@ -229,8 +229,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="再試行"
-                            style="@style/Widget.Material3.Button.FilledTonalButton" />
+                            app:backgroundTint="#FFC107"
+                            android:textColor="#FFFFFF" />
                     </LinearLayout>
+
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvSearchResults"
