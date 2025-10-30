@@ -1,5 +1,6 @@
 package ecccomp.s2240195.iotchokinapp
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -106,6 +107,7 @@ class NewGoalActivity : AppCompatActivity() {
         )
 
         call.enqueue(object : Callback<RakutenApiResponse> {
+            @SuppressLint("NotifyDataSetChanged")
             override fun onResponse(
                 call: Call<RakutenApiResponse>,
                 response: Response<RakutenApiResponse>
@@ -122,7 +124,7 @@ class NewGoalActivity : AppCompatActivity() {
                         ).show()
                     } else {
                         // RakutenProduct に変換
-                        val products = items.mapNotNull { wrapper ->
+                        val products = items.map { wrapper ->
                             val item = wrapper.Item
                             val imageUrl = item.mediumImageUrls.firstOrNull()?.imageUrl ?: ""
 
