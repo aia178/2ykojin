@@ -11,6 +11,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.firestore.FirebaseFirestore
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,6 +25,11 @@ class NewGoalActivity : AppCompatActivity() {
     private lateinit var etSearchProduct: TextInputEditText
     private lateinit var btnSearch: MaterialButton
     private lateinit var recyclerView: RecyclerView
+
+    private lateinit var etTargetAmount: TextInputEditText
+    private lateinit var etGoalName: TextInputEditText
+    private lateinit var btnSave: MaterialButton
+    private lateinit var firestore: FirebaseFirestore
 
     // Adapter
     private var productList = mutableListOf<RakutenProduct>()
@@ -41,6 +47,8 @@ class NewGoalActivity : AppCompatActivity() {
 
         // タブ切り替え設定
         setupTabs()
+        // Firestore初期化
+        firestore = FirebaseFirestore.getInstance()
 
         // 検索ボタン
         btnSearch.setOnClickListener {
@@ -51,6 +59,19 @@ class NewGoalActivity : AppCompatActivity() {
                 searchProducts(keyword)
             }
         }
+
+        btnSave.setOnClickListener {
+            val goalName = etGoalName.text.toString().trim()
+            val targetAmountStr = etTargetAmount.text.toString().trim()
+            val  targetAmount = targetAmountStr.toIntOrNull() ?: 0
+
+            if (goalName.isEmpty() || targetAmount <= 0){
+                Toast.makeText(application, "目標名と目標金額を正しく入力してください", Toast.LENGTH_SHORT).show()
+            }else{
+                saveCustomGoalToFirestore(goalName, targetAmount)
+            }
+        }
+
 
         // 戻るボタン
         findViewById<android.widget.ImageButton>(R.id.btnBack)?.setOnClickListener {
@@ -65,13 +86,16 @@ class NewGoalActivity : AppCompatActivity() {
         etSearchProduct = findViewById(R.id.etSearchProduct)
         btnSearch = findViewById(R.id.btnSearch)
         recyclerView = findViewById(R.id.rvSearchResults)
+        btnSave = findViewById(R.id.btnSave)
+        etGoalName = findViewById(R.id.etGoalName)
+        etTargetAmount = findViewById(R.id.etTargetAmount)
     }
 
     private fun setupRecyclerView() {
         adapter = ProductAdapter(productList) { product ->
             // 商品がクリックされたときの処理
             Toast.makeText(this, "${product.itemName} を選択", Toast.LENGTH_SHORT).show()
-            // TODO: Firestoreに保存する処理を追加
+            saveGoalToFirestore(product)
         }
 
         recyclerView.adapter = adapter
@@ -166,4 +190,51 @@ class NewGoalActivity : AppCompatActivity() {
             }
         })
     }
+    private fun saveGoalToFirestore(product: RakutenProduct) {
+        val wish = Wish(
+            goalType = "rakuten",
+            itemName = product.itemName,
+            itemUrl = product.itemUrl,
+            imageUrl = product.imageUrl,
+            itemCode = product.itemCode,
+            targetAmount = product.itemPrice,
+            currentAmount = 0,
+            isActive = true,
+            isSelected = true
+        )
+
+        firestore.collection("goals")
+            .add(wish)
+            .addOnSuccessListener {
+                Toast.makeText(this, "目標を保存しました", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "保存失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+    private fun saveCustomGoalToFirestore(goalName: String, targetAmount: Int) {
+        val wish = Wish(
+            goalType = "custom",
+            itemName = goalName,
+            targetAmount = targetAmount,
+            currentAmount = 0,
+            imageUrl = "",
+            itemUrl = "",
+            itemCode = "",
+            isActive = true,
+            isSelected = true
+        )
+
+        firestore.collection("goals").add(wish)
+            .addOnSuccessListener {
+                Toast.makeText(this, "目標を保存しました!!", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "保存失敗；；: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+
+    }
+
 }
