@@ -1,5 +1,6 @@
 package ecccomp.s2240195.iotchokinapp
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -43,12 +44,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-        private fun loadUserData() {
-            // ユーザーデータの読み込み処理
-            firestore.collection("goals")
-                .whereEqualTo("isSelected", true)
-                .get()
-                .addOnSuccessListener { documents ->
+    @SuppressLint("SetTextI18n")
+    private fun loadUserData() {
+        firestore.collection("goals")
+            .whereEqualTo("selected", true)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Toast.makeText(this, "読み込み失敗: ${error.message}", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
+                }
+                
+                snapshots?.let { documents ->
                     for (document in documents) {
                         val goalType = document.getString("goalType") ?: ""
                         val itemName = document.getString("itemName") ?: ""
@@ -75,9 +81,6 @@ class MainActivity : AppCompatActivity() {
                         productImage.load(imageUrl)
                     }
                 }
-                .addOnFailureListener { e ->
-                    // 読み込み失敗時の処理
-                    Toast.makeText(this, "読み込み失敗: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
+            }
     }
 }

@@ -14,7 +14,9 @@ interface RakutenApiService {
         @Query("applicationId") applicationId: String,
         @Query("keyword") keyword: String,
         @Query("hits") hits: Int = 30,
-        @Query("imageFlag") imageFlag: Int = 1
+        @Query("imageFlag") imageFlag: Int = 1,
+        @Query("format") format: String = "json",
+        @Query("formatVersion") formatVersion: Int = 2
     ): Call<RakutenApiResponse>
 }
 

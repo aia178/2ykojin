@@ -42,19 +42,19 @@ class NewGoalActivity : AppCompatActivity() {
         // ビューの初期化
         initViews()
 
-        // RecyclerView設定
+        // RecyclerView 設定
         setupRecyclerView()
 
         // タブ切り替え設定
         setupTabs()
-        // Firestore初期化
+        // Firestore 初期化
         firestore = FirebaseFirestore.getInstance()
 
         // 検索ボタン
         btnSearch.setOnClickListener {
-            val keyword = etSearchProduct.text.toString().trim()
-            if (keyword.isEmpty()) {
-                Toast.makeText(this, "キーワードを入力してください", Toast.LENGTH_SHORT).show()
+            val keyword = etSearchProduct.text?.toString()?.trim() ?: ""
+            if (keyword.length < 2) {
+                Toast.makeText(this, "2文字以上で入力してください", Toast.LENGTH_SHORT).show()
             } else {
                 searchProducts(keyword)
             }
@@ -66,12 +66,11 @@ class NewGoalActivity : AppCompatActivity() {
             val  targetAmount = targetAmountStr.toIntOrNull() ?: 0
 
             if (goalName.isEmpty() || targetAmount <= 0){
-                Toast.makeText(application, "目標名と目標金額を正しく入力してください", Toast.LENGTH_SHORT).show()
+                Toast.makeText(application, "目標名と目標設定額を正しく入力してください", Toast.LENGTH_SHORT).show()
             }else{
                 saveCustomGoalToFirestore(goalName, targetAmount)
             }
         }
-
 
         // 戻るボタン
         findViewById<android.widget.ImageButton>(R.id.btnBack)?.setOnClickListener {
@@ -190,6 +189,7 @@ class NewGoalActivity : AppCompatActivity() {
             }
         })
     }
+
     private fun saveGoalToFirestore(product: RakutenProduct) {
         val wish = Wish(
             goalType = "rakuten",
@@ -200,19 +200,21 @@ class NewGoalActivity : AppCompatActivity() {
             targetAmount = product.itemPrice,
             currentAmount = 0,
             isActive = true,
-            isSelected = true
+            selected = true
         )
 
-        firestore.collection("goals")
-            .add(wish)
-            .addOnSuccessListener {
+        saveGoalExclusively(
+            wish = wish,
+            onSuccess = {
                 Toast.makeText(this, "目標を保存しました", Toast.LENGTH_SHORT).show()
                 finish()
-            }
-            .addOnFailureListener { e ->
+            },
+            onError = { e ->
                 Toast.makeText(this, "保存失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+        )
     }
+
     private fun saveCustomGoalToFirestore(goalName: String, targetAmount: Int) {
         val wish = Wish(
             goalType = "custom",
@@ -223,18 +225,44 @@ class NewGoalActivity : AppCompatActivity() {
             itemUrl = "",
             itemCode = "",
             isActive = true,
-            isSelected = true
+            selected = true
         )
 
-        firestore.collection("goals").add(wish)
-            .addOnSuccessListener {
+        saveGoalExclusively(
+            wish = wish,
+            onSuccess = {
                 Toast.makeText(this, "目標を保存しました!!", Toast.LENGTH_SHORT).show()
                 finish()
+            },
+            onError = { e ->
+                Toast.makeText(this, "保存失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "保存失敗；；: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-
+        )
     }
 
+    private fun saveGoalExclusively(
+        wish: Wish,
+        onSuccess: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val goals = firestore.collection("goals")
+
+        goals.whereEqualTo("selected", true)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val batch = firestore.batch()
+
+                snapshot.documents.forEach { doc ->
+                    batch.update(doc.reference, "selected", false)
+                }
+
+                val newGoalRef = goals.document()
+                batch.set(newGoalRef, wish.copy(selected = true))
+
+                batch.commit()
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { onError(it) }
+            }
+            .addOnFailureListener { onError(it) }
+    }
 }

@@ -13,7 +13,7 @@ data class Wish(
     val targetAmount: Int = 0,           // 目標金額
     val currentAmount: Int = 0,          // 現在の貯金額
     val isActive: Boolean = true,        // 進行中か
-    val isSelected: Boolean = false,     // ホームで選択中か
+    val selected: Boolean = false,     // ホームで選択中か
     val createdAt: Timestamp = Timestamp.now(),
     val achievedAt: Timestamp? = null
 )
