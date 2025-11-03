@@ -2,124 +2,91 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="220dp"
-    android:layout_height="260dp"
-    android:layout_marginEnd="16dp"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="160dp"
+    android:layout_height="160dp"
+    android:layout_marginEnd="12dp"
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
-    app:cardElevation="8dp"
-    app:cardUseCompatPadding="true"
-    app:cardCornerRadius="20dp"
-    app:strokeColor="#33FFC107"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="12dp"
+    app:strokeColor="#E0E0E0"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="#FFFFFF">
 
-        <!-- 画像＋グラデーションヘッダー -->
+        <!-- 画像エリア -->
         <FrameLayout
             android:id="@+id/goalImageContainer"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="100dp"
             android:background="#F5F5F5"
-            android:clipToOutline="true"
-            android:outlineProvider="background"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintDimensionRatio="1.3:1"
-            app:layout_constraintBottom_toTopOf="@id/goalInfoContainer">
+            app:layout_constraintEnd_toEndOf="parent">
 
+            <!-- 商品画像 -->
             <ImageView
                 android:id="@+id/goalCardImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:contentDescription="@string/product_image_description" />
+                android:contentDescription="@string/product_image_description"
+                tools:src="@android:drawable/ic_menu_gallery" />
 
-            <!-- 目標種別バッジ（表示非表示切替は任意） -->
-            <TextView
-                android:id="@+id/goalCardBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:background="@drawable/badge_background"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textAllCaps="true"
-                android:visibility="gone"
-                android:text="CUSTOM" />
+            <!-- グラデーションオーバーレイ -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/gradient_overlay" />
         </FrameLayout>
 
-        <!-- 下部情報エリア -->
+        <!-- 情報エリア -->
         <LinearLayout
-            android:id="@+id/goalInfoContainer"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:orientation="vertical"
-            android:padding="16dp"
+            android:padding="10dp"
             android:gravity="center_vertical"
-            android:background="@drawable/gradient_header"
-            android:backgroundTintMode="multiply"
+            app:layout_constraintTop_toBottomOf="@id/goalImageContainer"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintEnd_toEndOf="parent">
 
+            <!-- 目標名 -->
             <TextView
                 android:id="@+id/goalCardName"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:text="目標名"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textColor="#1a1a1a"
+                android:textSize="12sp"
                 android:textStyle="bold"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:ellipsize="end"
-                android:lineSpacingExtra="2dp" />
+                android:gravity="center_vertical"
+                tools:text="Nintendo Switch" />
 
+            <!-- 達成率バッジ -->
             <TextView
-                android:id="@+id/goalCardTarget"
-                android:layout_width="match_parent"
+                android:id="@+id/goalCardProgress"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="目標金額 ¥30,000"
-                android:textColor="#FCECDD"
-                android:textSize="13sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ProgressBar
-                    android:id="@+id/goalCardProgressBar"
-                    style="@style/Widget.MaterialComponents.LinearProgressIndicator"
-                    android:layout_width="0dp"
-                    android:layout_height="6dp"
-                    android:layout_weight="1"
-                    android:indeterminate="false"
-                    android:progress="40"
-                    android:progressTint="#FFC107"
-                    android:backgroundTint="#33FFFFFF" />
-
-                <TextView
-                    android:id="@+id/goalCardProgress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="40%"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:background="@drawable/badge_background"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="0%"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="40%" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

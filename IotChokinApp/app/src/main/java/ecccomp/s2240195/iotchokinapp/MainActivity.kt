@@ -179,7 +179,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
     }
-
     private fun switchSelectedGoal(newGoalId: String) {
         val batch = firestore.batch()
 
