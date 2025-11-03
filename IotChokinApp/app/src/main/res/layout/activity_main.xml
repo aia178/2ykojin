@@ -52,9 +52,7 @@
                         android:text="@string/LogonameSaveWish"
                         android:textColor="#FFFFFF"
                         android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/ap" />
-
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/LogoSubtitle"
@@ -314,7 +312,7 @@
                     android:layout_marginBottom="12dp"
                     android:layout_marginStart="4dp" />
 
-                <!-- 横スクロール目標カード -->
+                <!-- 横スクロール目標カード（動的に生成） -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -322,186 +320,15 @@
                     android:layout_marginBottom="16dp">
 
                     <LinearLayout
+                        android:id="@+id/allGoalsContainer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp">
 
-                        <!-- 目標カード1 -->
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="140dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeColor="#FFC107"
-                            app:strokeWidth="2dp">
+                        <!-- ここに動的に目標カードが追加される -->
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="12dp">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="80dp"
-                                    android:scaleType="centerCrop"
-                                    android:background="#F5F5F5"
-                                    android:contentDescription="@string/product_image_description"
-                                    tools:src="@android:drawable/ic_menu_gallery" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:text="@string/sample_goal_title"
-                                    android:textColor="#212121"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold"
-                                    android:maxLines="2"
-                                    android:ellipsize="end" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="@string/sample_achievement_rate"
-                                    android:textColor="#FFC107"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <!-- 目標カード2 -->
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="140dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeColor="#D4D4D4"
-                            app:strokeWidth="1dp">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="12dp">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="80dp"
-                                    android:scaleType="centerCrop"
-                                    android:background="#F5F5F5"
-                                    android:contentDescription="@string/product_image_description"
-                                    tools:src="@android:drawable/ic_menu_gallery" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:text="@string/sample_goal_title_2"
-                                    android:textColor="#212121"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold"
-                                    android:maxLines="2"
-                                    android:ellipsize="end" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="@string/sample_achievement_rate_2"
-                                    android:textColor="#9E9E9E"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <!-- 目標カード3 -->
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="140dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeColor="#D4D4D4"
-                            app:strokeWidth="1dp">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="12dp">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="80dp"
-                                    android:scaleType="centerCrop"
-                                    android:background="#F5F5F5"
-                                    android:contentDescription="@string/product_image_description"
-                                    tools:src="@android:drawable/ic_menu_gallery" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:text="@string/sample_goal_title_3"
-                                    android:textColor="#212121"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold"
-                                    android:maxLines="2"
-                                    android:ellipsize="end" />
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="@string/sample_achievement_rate_3"
-                                    android:textColor="#9E9E9E"
-                                    android:textSize="11sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <!-- 新規追加ボタン -->
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="140dp"
-                            android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:cardElevation="0dp"
-                            app:strokeColor="#D4D4D4"
-                            app:strokeWidth="1dp"
-                            android:backgroundTint="#F9F9F9">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:gravity="center"
-                                android:padding="12dp"
-                                android:minHeight="140dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="+"
-                                    android:textColor="#FFC107"
-                                    android:textSize="48sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="@string/label_add_goal"
-                                    android:textColor="#757575"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
                 </HorizontalScrollView>
 

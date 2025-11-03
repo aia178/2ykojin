@@ -120,8 +120,11 @@ class NewGoalActivity : AppCompatActivity() {
         })
     }
 
+    // NewGoalActivity.kt の searchProducts メソッドを以下に置き換え
+
+    // NewGoalActivity.kt の searchProducts メソッドを以下に置き換え
+
     private fun searchProducts(keyword: String) {
-        // API呼び出し
         val call = RakutenApiClient.apiService.searchItem(
             applicationId = Config.APPLICATION_ID,
             keyword = keyword,
@@ -145,22 +148,35 @@ class NewGoalActivity : AppCompatActivity() {
                             "検索結果がありません",
                             Toast.LENGTH_SHORT
                         ).show()
-                    } else {
-                        // RakutenProduct に変換
-                        val products = items.map { wrapper ->
-                            val item = wrapper.Item
-                            val imageUrl = item.mediumImageUrls.firstOrNull()?.imageUrl ?: ""
+                        return
+                    }
 
-                            RakutenProduct(
-                                itemName = item.itemName,
-                                itemPrice = item.itemPrice,
-                                itemUrl = item.itemUrl,
-                                itemCode = item.itemCode,
-                                imageUrl = imageUrl
-                            )
+                    // Itemラッパーなしで直接マッピング
+                    val products = items.mapNotNull { item ->
+                        // 必須フィールドのチェック
+                        if (item.itemName.isNullOrBlank() || item.itemPrice == null) {
+                            return@mapNotNull null
                         }
 
-                        // リスト更新
+                        // mediumImageUrls は直接 String のリスト
+                        val imageUrl = item.mediumImageUrls?.firstOrNull() ?: ""
+
+                        RakutenProduct(
+                            itemName = item.itemName,
+                            itemPrice = item.itemPrice,
+                            itemUrl = item.itemUrl ?: "",
+                            itemCode = item.itemCode ?: "",
+                            imageUrl = imageUrl
+                        )
+                    }
+
+                    if (products.isEmpty()) {
+                        Toast.makeText(
+                            this@NewGoalActivity,
+                            "有効な検索結果がありませんでした",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
                         productList.clear()
                         productList.addAll(products)
                         adapter.notifyDataSetChanged()

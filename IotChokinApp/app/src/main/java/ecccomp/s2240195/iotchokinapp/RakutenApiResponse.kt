@@ -1,24 +1,50 @@
 package ecccomp.s2240195.iotchokinapp
 
-data class RakutenApiResponse (
-    val Items: List<RakutenItemWrapper> //　商品リスト
+import com.google.gson.annotations.SerializedName
+
+// 楽天APIレスポンス全体
+data class RakutenApiResponse(
+    @SerializedName("Items")
+    val Items: List<RakutenItemDetail>? = null,  // 直接 RakutenItemDetail のリスト
+
+    @SerializedName("count")
+    val count: Int? = null,
+
+    @SerializedName("page")
+    val page: Int? = null,
+
+    @SerializedName("first")
+    val first: Int? = null,
+
+    @SerializedName("last")
+    val last: Int? = null,
+
+    @SerializedName("hits")
+    val hits: Int? = null,
+
+    @SerializedName("carrier")
+    val carrier: Int? = null,
+
+    @SerializedName("pageCount")
+    val pageCount: Int? = null
 )
 
-
-data class RakutenItemWrapper(
-    val Item: RakutenItemDetail //　商品
-)
-
+// 商品詳細（Wrapperは不要）
 data class RakutenItemDetail(
-    val itemName: String, //　商品名
-    val itemPrice: Int, //　値段
-    val itemUrl: String, // うｒｌ
-    val itemCode: String, // 商品コード
-    val mediumImageUrls: List<RakutenImageUrl> // 画像まとめ
+    @SerializedName("itemName")
+    val itemName: String? = null,
+
+    @SerializedName("itemPrice")
+    val itemPrice: Int? = null,
+
+    @SerializedName("itemUrl")
+    val itemUrl: String? = null,
+
+    @SerializedName("itemCode")
+    val itemCode: String? = null,
+
+    @SerializedName("mediumImageUrls")
+    val mediumImageUrls: List<String>? = null  // 直接 String のリスト
 )
 
-data class RakutenImageUrl(
-    val imageUrl: String //　商品画像
-)
-
-
+// RakutenItemWrapper と RakutenImageUrl は削除（不要）
