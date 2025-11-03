@@ -18,20 +18,17 @@ import retrofit2.Response
 
 class NewGoalActivity : AppCompatActivity() {
 
-    // UI Components
     private lateinit var tabLayout: TabLayout
     private lateinit var rakutenSearchCard: MaterialCardView
     private lateinit var customGoalCard: MaterialCardView
     private lateinit var etSearchProduct: TextInputEditText
     private lateinit var btnSearch: MaterialButton
     private lateinit var recyclerView: RecyclerView
-
     private lateinit var etTargetAmount: TextInputEditText
     private lateinit var etGoalName: TextInputEditText
     private lateinit var btnSave: MaterialButton
     private lateinit var firestore: FirebaseFirestore
 
-    // Adapter
     private var productList = mutableListOf<RakutenProduct>()
     private lateinit var adapter: ProductAdapter
 
@@ -39,18 +36,12 @@ class NewGoalActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_goal)
 
-        // ビューの初期化
         initViews()
-
-        // RecyclerView 設定
         setupRecyclerView()
-
-        // タブ切り替え設定
         setupTabs()
-        // Firestore 初期化
+
         firestore = FirebaseFirestore.getInstance()
 
-        // 検索ボタン
         btnSearch.setOnClickListener {
             val keyword = etSearchProduct.text?.toString()?.trim() ?: ""
             if (keyword.length < 2) {
@@ -63,16 +54,15 @@ class NewGoalActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val goalName = etGoalName.text.toString().trim()
             val targetAmountStr = etTargetAmount.text.toString().trim()
-            val  targetAmount = targetAmountStr.toIntOrNull() ?: 0
+            val targetAmount = targetAmountStr.toIntOrNull() ?: 0
 
-            if (goalName.isEmpty() || targetAmount <= 0){
-                Toast.makeText(application, "目標名と目標設定額を正しく入力してください", Toast.LENGTH_SHORT).show()
-            }else{
+            if (goalName.isEmpty() || targetAmount <= 0) {
+                Toast.makeText(this, "目標名と目標設定額を正しく入力してください", Toast.LENGTH_SHORT).show()
+            } else {
                 saveCustomGoalToFirestore(goalName, targetAmount)
             }
         }
 
-        // 戻るボタン
         findViewById<android.widget.ImageButton>(R.id.btnBack)?.setOnClickListener {
             finish()
         }
@@ -92,7 +82,6 @@ class NewGoalActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = ProductAdapter(productList) { product ->
-            // 商品がクリックされたときの処理
             Toast.makeText(this, "${product.itemName} を選択", Toast.LENGTH_SHORT).show()
             saveGoalToFirestore(product)
         }
@@ -119,10 +108,6 @@ class NewGoalActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
     }
-
-    // NewGoalActivity.kt の searchProducts メソッドを以下に置き換え
-
-    // NewGoalActivity.kt の searchProducts メソッドを以下に置き換え
 
     private fun searchProducts(keyword: String) {
         val call = RakutenApiClient.apiService.searchItem(
@@ -151,14 +136,11 @@ class NewGoalActivity : AppCompatActivity() {
                         return
                     }
 
-                    // Itemラッパーなしで直接マッピング
                     val products = items.mapNotNull { item ->
-                        // 必須フィールドのチェック
                         if (item.itemName.isNullOrBlank() || item.itemPrice == null) {
                             return@mapNotNull null
                         }
 
-                        // mediumImageUrls は直接 String のリスト
                         val imageUrl = item.mediumImageUrls?.firstOrNull() ?: ""
 
                         RakutenProduct(
@@ -207,15 +189,18 @@ class NewGoalActivity : AppCompatActivity() {
     }
 
     private fun saveGoalToFirestore(product: RakutenProduct) {
+        // 商品名を自動短縮
+        val shortName = TextUtils.shortenProductName(product.itemName)
+
         val wish = Wish(
             goalType = "rakuten",
-            itemName = product.itemName,
+            itemName = shortName,
             itemUrl = product.itemUrl,
             imageUrl = product.imageUrl,
             itemCode = product.itemCode,
             targetAmount = product.itemPrice,
             currentAmount = 0,
-            isActive = true,
+            active = true,
             selected = true
         )
 
@@ -240,7 +225,7 @@ class NewGoalActivity : AppCompatActivity() {
             imageUrl = "",
             itemUrl = "",
             itemCode = "",
-            isActive = true,
+            active = true,
             selected = true
         )
 
@@ -273,7 +258,7 @@ class NewGoalActivity : AppCompatActivity() {
                 }
 
                 val newGoalRef = goals.document()
-                batch.set(newGoalRef, wish.copy(selected = true))
+                batch.set(newGoalRef, wish)
 
                 batch.commit()
                     .addOnSuccessListener { onSuccess() }

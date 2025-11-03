@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import android.view.LayoutInflater
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import coil.load
 
 class MainActivity : AppCompatActivity() {
@@ -25,11 +26,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var productImage: ImageView
     private lateinit var allGoalsContainer: LinearLayout
 
+    private var selectedGoalListener: ListenerRegistration? = null
+    private var allGoalsListener: ListenerRegistration? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // ビューの初期化
         goalTitle = findViewById(R.id.goalTitle)
         currentAmount = findViewById(R.id.currentAmount)
         targetAmount = findViewById(R.id.targetAmount)
@@ -39,85 +42,85 @@ class MainActivity : AppCompatActivity() {
         productImage = findViewById(R.id.productImage)
         allGoalsContainer = findViewById(R.id.allGoalsContainer)
 
-        // Firestoreのインスタンス
         firestore = FirebaseFirestore.getInstance()
 
-        // データ読み込み
         loadUserData()
 
-        // 新しい目標ボタンの処理
         findViewById<com.google.android.material.button.MaterialButton>(R.id.btnNewGoal)?.setOnClickListener {
             val intent = Intent(this, NewGoalActivity::class.java)
             startActivity(intent)
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        selectedGoalListener?.remove()
+        allGoalsListener?.remove()
+    }
+
     @SuppressLint("SetTextI18n")
     private fun loadUserData() {
-        // 選択中の目標を表示
-        firestore.collection("goals")
+        selectedGoalListener = firestore.collection("goals")
             .whereEqualTo("selected", true)
+            .whereEqualTo("active", true)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Toast.makeText(this, "読み込み失敗: ${error.message}", Toast.LENGTH_SHORT).show()
                     return@addSnapshotListener
                 }
 
-                snapshots?.let { documents ->
-                    if (documents.isEmpty) {
-                        showNoGoalState()
-                        return@addSnapshotListener
+                if (snapshots == null || snapshots.isEmpty) {
+                    showNoGoalState()
+                    return@addSnapshotListener
+                }
+
+                val document = snapshots.documents[0]
+                val itemName = document.getString("itemName") ?: ""
+                val imageUrl = document.getString("imageUrl") ?: ""
+                val targetAmountValue = document.getLong("targetAmount")?.toInt() ?: 0
+                val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
+
+                val remaining = targetAmountValue - currentAmountValue
+                val remainingText = if (remaining > 0) {
+                    "¥${String.format("%,d", remaining)}"
+                } else {
+                    "達成！"
+                }
+
+                val progress = if (targetAmountValue > 0) {
+                    ((currentAmountValue.toFloat() / targetAmountValue.toFloat()) * 100).toInt()
+                } else {
+                    0
+                }
+
+                goalTitle.text = itemName
+                currentAmount.text = "¥${String.format("%,d", currentAmountValue)}"
+                targetAmount.text = "¥${String.format("%,d", targetAmountValue)}"
+                remainingAmount.text = remainingText
+                achievementBadge.text = "${progress}%"
+                progressBar.progress = progress.coerceIn(0, 100)
+
+                if (imageUrl.isNotEmpty()) {
+                    productImage.load(imageUrl) {
+                        crossfade(true)
+                        placeholder(android.R.drawable.ic_menu_gallery)
+                        error(android.R.drawable.ic_menu_gallery)
                     }
-
-                    for (document in documents) {
-                        val itemName = document.getString("itemName") ?: ""
-                        val imageUrl = document.getString("imageUrl") ?: ""
-                        val targetAmountValue = document.getLong("targetAmount")?.toInt() ?: 0
-                        val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
-
-                        val remaining = targetAmountValue - currentAmountValue
-                        val remainingText = if (remaining > 0) {
-                            "¥${String.format("%,d", remaining)}"
-                        } else {
-                            "達成！"
-                        }
-
-                        val progress = if (targetAmountValue > 0) {
-                            ((currentAmountValue.toFloat() / targetAmountValue.toFloat()) * 100).toInt()
-                        } else {
-                            0
-                        }
-
-                        goalTitle.text = itemName
-                        currentAmount.text = "¥${String.format("%,d", currentAmountValue)}"
-                        targetAmount.text = "¥${String.format("%,d", targetAmountValue)}"
-                        remainingAmount.text = remainingText
-                        achievementBadge.text = "${progress}%"
-                        progressBar.progress = progress.coerceIn(0, 100)
-
-                        if (imageUrl.isNotEmpty()) {
-                            productImage.load(imageUrl) {
-                                crossfade(true)
-                                placeholder(android.R.drawable.ic_menu_gallery)
-                                error(android.R.drawable.ic_menu_gallery)
-                            }
-                        } else {
-                            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
-                        }
-                    }
+                } else {
+                    productImage.setImageResource(android.R.drawable.ic_menu_gallery)
                 }
             }
 
-        // すべての目標を表示
         loadAllGoals()
     }
 
     @SuppressLint("SetTextI18n", "InflateParams")
     private fun loadAllGoals() {
-        firestore.collection("goals")
-            .whereEqualTo("isActive", true)
+        allGoalsListener = firestore.collection("goals")
+            .whereEqualTo("active", true)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
+                    Toast.makeText(this, "目標リスト取得失敗: ${error.message}", Toast.LENGTH_SHORT).show()
                     return@addSnapshotListener
                 }
 
@@ -138,16 +141,14 @@ class MainActivity : AppCompatActivity() {
                             0
                         }
 
-                        // カードビューを生成
                         val cardView = LayoutInflater.from(this).inflate(
                             R.layout.item_goal_card,
                             null
                         ) as com.google.android.material.card.MaterialCardView
 
-                        // 選択中の目標は枠を金色に
                         if (isSelected) {
                             cardView.strokeColor = getColor(android.R.color.holo_orange_light)
-                            cardView.strokeWidth = 6
+                            cardView.strokeWidth = 8
                         } else {
                             cardView.strokeColor = getColor(android.R.color.darker_gray)
                             cardView.strokeWidth = 2
@@ -169,24 +170,12 @@ class MainActivity : AppCompatActivity() {
                         goalName.text = itemName
                         goalProgress.text = "${progress}%"
 
-                        // カードをタップしたら選択中の目標に切り替え
                         cardView.setOnClickListener {
                             switchSelectedGoal(goalId)
                         }
 
                         allGoalsContainer.addView(cardView)
                     }
-
-                    // 新規追加ボタン
-                    val addButton = LayoutInflater.from(this).inflate(
-                        R.layout.item_add_goal_card,
-                        null
-                    )
-                    addButton.setOnClickListener {
-                        val intent = Intent(this, NewGoalActivity::class.java)
-                        startActivity(intent)
-                    }
-                    allGoalsContainer.addView(addButton)
                 }
             }
     }
@@ -194,7 +183,6 @@ class MainActivity : AppCompatActivity() {
     private fun switchSelectedGoal(newGoalId: String) {
         val batch = firestore.batch()
 
-        // すべての selected を false に
         firestore.collection("goals")
             .whereEqualTo("selected", true)
             .get()
@@ -203,7 +191,6 @@ class MainActivity : AppCompatActivity() {
                     batch.update(doc.reference, "selected", false)
                 }
 
-                // 新しい目標を selected = true に
                 val newGoalRef = firestore.collection("goals").document(newGoalId)
                 batch.update(newGoalRef, "selected", true)
 

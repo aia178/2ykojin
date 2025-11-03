@@ -12,7 +12,7 @@ data class Wish(
     val itemCode: String = "",           // 商品コード（楽天の場合）
     val targetAmount: Int = 0,           // 目標金額
     val currentAmount: Int = 0,          // 現在の貯金額
-    val isActive: Boolean = true,        // 進行中か
+    val active: Boolean = true,        // 進行中か
     val selected: Boolean = false,     // ホームで選択中か
     val createdAt: Timestamp = Timestamp.now(),
     val achievedAt: Timestamp? = null
