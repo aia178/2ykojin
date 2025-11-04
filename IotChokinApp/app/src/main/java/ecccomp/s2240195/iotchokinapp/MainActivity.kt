@@ -141,9 +141,11 @@ class MainActivity : AppCompatActivity() {
                             0
                         }
 
+                        // 修正: allGoalsContainerを親として指定し、attachToRoot=falseを明示
                         val cardView = LayoutInflater.from(this).inflate(
                             R.layout.item_goal_card,
-                            null
+                            allGoalsContainer,  // 親を指定
+                            false  // すぐにattachしない
                         ) as com.google.android.material.card.MaterialCardView
 
                         if (isSelected) {
