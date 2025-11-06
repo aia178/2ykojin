@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
             val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
 
             // inflate したView の中から EditText を探す
-            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
+            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etGoalName)
 
             // 現在の名前をセット
             etDisplayName.setText(currentName)
@@ -371,38 +371,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmDialog(goalId: String) {
-        // 正しいレイアウトをinflate
         val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_delete_goal, null)
 
+        val cbAlsoDeleteHistory = dialogView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+            R.id.cbAlsoDeleteHistory
+        )
+        val btnConfirmDelete = dialogView.findViewById<MaterialButton>(R.id.btnConfirmDelete)
 
-
-
-        // ④ダイアログを作成
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .setCancelable(true)
             .create()
 
-        // ⑤キャンセルボタン
+        // 最初は削除ボタンを無効化
+        btnConfirmDelete.isEnabled = false
+        btnConfirmDelete.alpha = 0.5f
+
+        // チェックボックスの状態で削除ボタンを有効/無効化
+        cbAlsoDeleteHistory.setOnCheckedChangeListener { _, isChecked ->
+            btnConfirmDelete.isEnabled = isChecked
+            btnConfirmDelete.alpha = if (isChecked) 1.0f else 0.5f
+        }
+
         dialogView.findViewById<MaterialButton>(R.id.btnCancelDelete).setOnClickListener {
             dialog.dismiss()
         }
 
-        // ⑤キャンセルボタン
-        dialogView.findViewById<MaterialButton>(R.id.btnConfirmDelete).setOnClickListener {
-            // Firestore更新（Intで保存）
-            firestore.collection("goals")
-                .document(goalId)
-                .delete()
-                .addOnSuccessListener {
-                    Toast.makeText(this, "目標を削除しました；；", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
+        btnConfirmDelete.setOnClickListener {
+            // 履歴を取得して一括削除
+            firestore.collection("deposits")
+                .whereEqualTo("goalId", goalId)
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    val batch = firestore.batch()
+
+                    // 履歴を削除
+                    snapshot.documents.forEach { doc ->
+                        batch.delete(doc.reference)
+                    }
+
+                    // 目標を削除
+                    batch.delete(firestore.collection("goals").document(goalId))
+
+                    // 一括実行
+                    batch.commit()
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "目標と履歴を削除しました", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         }
-        //ダイアログ表示
+
         dialog.show()
     }
 }

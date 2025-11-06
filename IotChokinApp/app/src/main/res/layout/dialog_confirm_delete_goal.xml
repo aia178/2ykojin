@@ -4,69 +4,87 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="20dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="8dp"
-    android:layout_margin="16dp">
+    android:layout_margin="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:background="#FFFFFF">
 
-        <!-- タイトル -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="目標を削除しますか?"
-            android:textColor="#212121"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <!-- 説明文 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="目標は削除されますが、貯金履歴は残ります。"
-            android:textColor="#757575"
-            android:textSize="14sp"
-            android:layout_marginBottom="16dp" />
-
-        <!-- チェックボックス -->
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/cbAlsoDeleteHistory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="履歴も削除する(取り消し不可)"
-            android:textColor="#D32F2F"
-            android:textSize="14sp"
-            app:buttonTint="#D32F2F" />
-
-        <!-- ボタンエリア -->
+        <!-- 赤いヘッダー -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="24dp">
+            android:background="#D32F2F"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancelDelete"
-                style="@style/Widget.Material3.Button.TextButton"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="キャンセル"
-                android:textColor="#757575"
-                android:layout_marginEnd="8dp" />
+                android:text="⚠️ 削除の確認"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnConfirmDelete"
+        <!-- コンテンツ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="削除"
-                app:backgroundTint="#D32F2F"
-                android:textColor="#FFFFFF" />
+                android:text="目標と貯金履歴が完全に削除されます。"
+                android:textColor="#424242"
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/cbAlsoDeleteHistory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="理解しました。削除します。"
+                android:textColor="#D32F2F"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:buttonTint="#D32F2F" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="20dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancelDelete"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="キャンセル"
+                    android:textColor="#757575"
+                    android:layout_marginEnd="8dp"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnConfirmDelete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="削除"
+                    app:backgroundTint="#D32F2F"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
