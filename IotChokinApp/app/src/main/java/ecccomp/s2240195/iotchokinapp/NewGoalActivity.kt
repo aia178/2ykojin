@@ -82,8 +82,7 @@ class NewGoalActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = ProductAdapter(productList) { product ->
-            Toast.makeText(this, "${product.itemName} を選択", Toast.LENGTH_SHORT).show()
-            saveGoalToFirestore(product)
+            showEditGoalNameDialog(product)
         }
 
         recyclerView.adapter = adapter
@@ -266,4 +265,35 @@ class NewGoalActivity : AppCompatActivity() {
             }
             .addOnFailureListener { onError(it) }
     }
+
+    private fun showEditGoalNameDialog(product: RakutenProduct) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_goal_name, null)
+        val etEditGoalName = dialogView.findViewById<TextInputEditText>(R.id.etEditGoalName)
+
+        val shortName = TextUtils.shortenProductName(product.itemName)
+        etEditGoalName.setText(shortName)
+        etEditGoalName.setSelection(shortName.length)
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        dialogView.findViewById<MaterialButton>(R.id.btnDialogCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<MaterialButton>(R.id.btnDialogSave).setOnClickListener {
+            val editedName = etEditGoalName.text.toString().trim()
+            if (editedName.isEmpty()) {
+                Toast.makeText(this, "目標名を入力してください", Toast.LENGTH_SHORT).show()
+            } else {
+                dialog.dismiss()
+                saveGoalToFirestore(product.copy(itemName = editedName))
+            }
+        }
+
+        dialog.show()
+    }
 }
+
