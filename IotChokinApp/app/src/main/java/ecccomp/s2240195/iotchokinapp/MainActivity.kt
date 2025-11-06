@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
             val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
 
             // inflate したView の中から EditText を探す
-            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etGoalName)
+            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
 
             // 現在の名前をセット
             etDisplayName.setText(currentName)

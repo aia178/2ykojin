@@ -1,78 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="8dp"
-    android:layout_margin="24dp">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_edit_display_name"
+        android:title="名前を編集"
+        android:icon="@drawable/ic_edit_24" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@drawable/gradient_header">
+    <item
+        android:id="@+id/action_edit_target_amount"
+        android:title="目標金額を変更"
+        android:icon="@drawable/ic_money_24" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✏️ 目標名を編集"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="20dp" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="目標名"
-            app:boxBackgroundColor="#FFFFFF"
-            app:boxStrokeColor="#FFC107"
-            app:boxCornerRadiusTopStart="8dp"
-            app:boxCornerRadiusTopEnd="8dp"
-            app:boxCornerRadiusBottomStart="8dp"
-            app:boxCornerRadiusBottomEnd="8dp"
-            app:hintTextColor="#FFC107">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEditGoalName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text"
-                android:maxLines="2"
-                android:maxLength="100"
-                android:textSize="16sp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="20dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDialogCancel"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="キャンセル"
-                android:textColor="#FFFFFF"
-                android:layout_marginEnd="8dp"
-                android:textSize="15sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDialogSave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="保存"
-                app:backgroundTint="#FFFFFF"
-                android:textColor="#FFC107"
-                android:textStyle="bold"
-                android:textSize="15sp"
-                app:cornerRadius="8dp" />
-        </LinearLayout>
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+    <item
+        android:id="@+id/action_delete_goal"
+        android:title="削除"
+        android:icon="@drawable/ic_delete_24" />
+</menu>

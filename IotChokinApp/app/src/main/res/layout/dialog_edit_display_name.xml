@@ -4,89 +4,147 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="20dp"
-    app:cardElevation="8dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="12dp"
     android:layout_margin="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:background="#FFFFFF">
 
-        <!-- タイトル -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="表示名を編集"
-            android:textColor="#212121"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <!-- 説明文 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="元の商品名は保持されます。2〜40文字で入力してください。"
-            android:textColor="#757575"
-            android:textSize="13sp"
-            android:layout_marginBottom="16dp" />
-
-        <!-- 入力フィールド -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilDisplayName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="表示名を入力"
-            app:boxBackgroundColor="#FFFFFF"
-            app:boxStrokeColor="#FFC107">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDisplayName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                android:maxLines="1"
-                android:maxLength="40" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- プレビュー -->
-        <TextView
-            android:id="@+id/tvPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="プレビュー：—"
-            android:textColor="#9E9E9E"
-            android:textSize="14sp"
-            android:ellipsize="end"
-            android:maxLines="1" />
-
-        <!-- ボタンエリア -->
+        <!-- ゴールドヘッダー -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="24dp">
+            android:background="@drawable/gradient_header"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancel"
-                style="@style/Widget.Material3.Button.TextButton"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="キャンセル"
-                android:textColor="#757575"
-                android:layout_marginEnd="8dp" />
+                android:text="✏️"
+                android:textSize="48sp"
+                android:layout_marginBottom="8dp" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSave"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="保存"
-                app:backgroundTint="#FFC107"
-                android:textColor="#FFFFFF" />
+                android:text="表示名を編集"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="見やすい名前に変更できます"
+                android:textColor="#FFFFFFCC"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- コンテンツエリア -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- 説明カード -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#FFE0B2"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="#FFF8E1">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="💡 元の商品名は保持されます\n2〜40文字で入力してください"
+                    android:textColor="#F57C00"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="2dp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 入力フィールド -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDisplayName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="表示名"
+                app:boxBackgroundMode="outline"
+                app:boxBackgroundColor="@android:color/transparent"
+                app:boxStrokeColor="#FFC107"
+                app:boxStrokeWidth="2dp"
+                app:hintTextColor="#FFC107"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:endIconMode="clear_text"
+                app:endIconTint="#FFC107"
+                app:counterEnabled="true"
+                app:counterMaxLength="40"
+                app:counterTextColor="#9E9E9E">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDisplayName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="2"
+                    android:maxLength="40"
+                    android:textSize="16sp"
+                    android:textColor="#212121"
+                    android:padding="16dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- ボタンエリア -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:gravity="end">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancel"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:text="キャンセル"
+                    android:textColor="#757575"
+                    android:textSize="15sp"
+                    android:layout_marginEnd="12dp"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:text="保存"
+                    app:backgroundTint="#FFC107"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    app:cornerRadius="28dp"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp"
+                    app:icon="@android:drawable/ic_menu_save"
+                    app:iconGravity="textStart"
+                    app:iconTint="#FFFFFF" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
