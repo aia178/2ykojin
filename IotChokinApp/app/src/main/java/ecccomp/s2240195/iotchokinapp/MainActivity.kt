@@ -1,6 +1,7 @@
 package ecccomp.s2240195.iotchokinapp
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -11,10 +12,13 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import android.widget.ImageButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import coil.load
+import java.time.temporal.TemporalAmount
 
 class MainActivity : AppCompatActivity() {
 
@@ -176,8 +180,8 @@ class MainActivity : AppCompatActivity() {
 
                         cardView.setOnClickListener {
                             switchSelectedGoal(goalId)
+                        }
 
-                            }
                         val btnMenu = cardView.findViewById<ImageButton>(R.id.btnGoalMenu)
 
                         btnMenu.setOnClickListener { view ->
@@ -189,6 +193,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
     }
+
     private fun switchSelectedGoal(newGoalId: String) {
         val batch = firestore.batch()
 
@@ -236,21 +241,168 @@ class MainActivity : AppCompatActivity() {
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_edit_display_name -> {
-                    Toast.makeText(this, "名前編集: $goalName", Toast.LENGTH_SHORT).show()
+                    showEditNameDialog(goalId, goalName)
                     true
                 }
                 R.id.action_edit_target_amount -> {
-                    Toast.makeText(this, "金額編集: ¥${String.format("%,d", targetAmount)}", Toast.LENGTH_SHORT).show()
+                    showEditAmountDialog(goalId, targetAmount)
                     true
                 }
                 R.id.action_delete_goal -> {
-                    Toast.makeText(this, "削除: $goalName", Toast.LENGTH_SHORT).show()
+                    showDeleteConfirmDialog(goalId)
                     true
                 }
                 else -> false
             }
         }
-
         popup.show()
+    }
+
+    private fun showEditNameDialog(goalId: String, currentName: String) {
+            // 目標名編集ダイアログの実装
+            // レイアウトをinflateして変数に保存
+            val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
+
+            // inflate したView の中から EditText を探す
+            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
+
+            // 現在の名前をセット
+            etDisplayName.setText(currentName)
+            etDisplayName.setSelection(currentName.length)
+
+            // ダイアログを作成
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView) // inflate したView全体をセット
+                .setCancelable(true) // 外タップで閉じる
+                .create()
+
+            // ⑤ボタンのクリックイベント
+            dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialogView.findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
+                val newName = etDisplayName.text.toString().trim()
+
+                if (newName.isEmpty()) {
+                    Toast.makeText(this, "目標名は空にできません", Toast.LENGTH_SHORT).show()
+                } else if (newName.length < 2) {
+                    Toast.makeText(this, "2文字以上で入力してください", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Firestore更新
+                    firestore.collection("goals")
+                        .document(goalId)
+                        .update("itemName", newName)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "目標名を更新しました", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            }
+
+            // ダイアログ表示
+            dialog.show()
+        }
+
+
+    private fun showEditAmountDialog(goalId: String, currentAmount: Int) {
+        // 正しいレイアウトをinflate
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_amount, null)
+
+        // EditTextを取得
+        val etAmount = dialogView.findViewById<TextInputEditText>(R.id.etAmount)
+
+        // 現在の金額をセット（IntをStringに変換）
+        etAmount.setText(currentAmount.toString())
+        etAmount.setSelection(currentAmount.toString().length) // カーソルを末尾に
+
+        // ダイアログを作成
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        // キャンセルボタン
+        dialogView.findViewById<MaterialButton>(R.id.btnCancelAmount).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // 保存ボタン
+        dialogView.findViewById<MaterialButton>(R.id.btnSaveAmount).setOnClickListener {
+            val newAmountStr = etAmount.text.toString().trim()
+
+            // 空チェック
+            if (newAmountStr.isEmpty()) {
+                Toast.makeText(this, "金額を入力してください", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 数値に変換できるかチェック
+            val newAmount = newAmountStr.toIntOrNull()
+            if (newAmount == null) {
+                Toast.makeText(this, "正しい数値を入力してください", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 範囲チェック（1〜10,000,000円）
+            if (newAmount < 1 || newAmount > 10_000_000) {
+                Toast.makeText(this, "1〜10,000,000円の範囲で設定してください", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Firestore更新（Intで保存）
+            firestore.collection("goals")
+                .document(goalId)
+                .update("targetAmount", newAmount)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "目標金額を更新しました", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
+
+        // ⑦ダイアログ表示
+        dialog.show()
+    }
+
+    private fun showDeleteConfirmDialog(goalId: String) {
+        // 正しいレイアウトをinflate
+        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_delete_goal, null)
+
+
+
+
+        // ④ダイアログを作成
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        // ⑤キャンセルボタン
+        dialogView.findViewById<MaterialButton>(R.id.btnCancelDelete).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // ⑤キャンセルボタン
+        dialogView.findViewById<MaterialButton>(R.id.btnConfirmDelete).setOnClickListener {
+            // Firestore更新（Intで保存）
+            firestore.collection("goals")
+                .document(goalId)
+                .delete()
+                .addOnSuccessListener {
+                    Toast.makeText(this, "目標を削除しました；；", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
+        //ダイアログ表示
+        dialog.show()
     }
 }
