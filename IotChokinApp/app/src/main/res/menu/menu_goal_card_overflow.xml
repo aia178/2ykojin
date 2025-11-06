@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_edit_display_name"
+        android:title="名前を編集"
+        android:icon="@drawable/ic_edit_24" />
+
+    <item
+        android:id="@+id/action_edit_target_amount"
+        android:title="目標金額を編集"
+        android:icon="@drawable/ic_money_24" />
+
+    <item
+        android:id="@+id/action_delete_goal"
+        android:title="削除"
+        android:icon="@drawable/ic_delete_24" />
+</menu>

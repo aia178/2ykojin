@@ -10,6 +10,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import android.view.LayoutInflater
+import android.view.View
+import android.widget.ImageButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import coil.load
@@ -174,6 +176,12 @@ class MainActivity : AppCompatActivity() {
 
                         cardView.setOnClickListener {
                             switchSelectedGoal(goalId)
+
+                            }
+                        val btnMenu = cardView.findViewById<ImageButton>(R.id.btnGoalMenu)
+
+                        btnMenu.setOnClickListener { view ->
+                            showGoalMenu(view, goalId, itemName, targetAmountValue)
                         }
 
                         allGoalsContainer.addView(cardView)
@@ -214,5 +222,35 @@ class MainActivity : AppCompatActivity() {
         achievementBadge.text = "0%"
         progressBar.progress = 0
         productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+    }
+
+    private fun showGoalMenu(
+        view: View,
+        goalId: String,
+        goalName: String,
+        targetAmount: Int
+    ) {
+        val popup = android.widget.PopupMenu(this, view)
+        popup.menuInflater.inflate(R.menu.menu_goal_card_overflow, popup.menu)
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_edit_display_name -> {
+                    Toast.makeText(this, "名前編集: $goalName", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.action_edit_target_amount -> {
+                    Toast.makeText(this, "金額編集: ¥${String.format("%,d", targetAmount)}", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.action_delete_goal -> {
+                    Toast.makeText(this, "削除: $goalName", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popup.show()
     }
 }

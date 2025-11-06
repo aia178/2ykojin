@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp"
+    android:layout_margin="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- タイトル -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="目標金額を編集"
+            android:textColor="#212121"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 説明文 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1〜10,000,000円の範囲で設定できます。"
+            android:textColor="#757575"
+            android:textSize="13sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 金額入力フィールド -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="金額を入力"
+            app:boxBackgroundColor="#FFFFFF"
+            app:boxStrokeColor="#FFC107"
+            app:prefixText="¥ ">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ボタンエリア -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="24dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelAmount"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="キャンセル"
+                android:textColor="#757575"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保存"
+                app:backgroundTint="#FFC107"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
