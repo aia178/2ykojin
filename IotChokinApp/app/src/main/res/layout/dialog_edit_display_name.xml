@@ -95,7 +95,7 @@
                 app:endIconTint="#FFC107"
                 app:counterEnabled="true"
                 app:counterMaxLength="40"
-                app:counterTextColor="#9E9E9E">
+                app:counterTextColor="@color/counter_text_gray">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDisplayName"
@@ -148,3 +148,4 @@
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
+

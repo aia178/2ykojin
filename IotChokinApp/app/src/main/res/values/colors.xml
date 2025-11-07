@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="primary_gold">#FFC107</color>
     <color name="stroke_gray">#E0E0E0</color>
+    <color name="counter_text_gray">#9E9E9E</color>
 </resources>
