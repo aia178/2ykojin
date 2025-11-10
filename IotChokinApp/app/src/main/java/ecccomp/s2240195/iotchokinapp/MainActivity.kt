@@ -268,7 +268,8 @@ class MainActivity : AppCompatActivity() {
 
             // 現在の名前をセット
             etDisplayName.setText(currentName)
-            etDisplayName.setSelection(currentName.length)
+            val safePosition = currentName.length.coerceAtMost(40)
+            etDisplayName.setSelection(safePosition)
 
             // ダイアログを作成
             val dialog = AlertDialog.Builder(this)
