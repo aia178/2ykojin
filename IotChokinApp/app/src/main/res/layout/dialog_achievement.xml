@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="16dp"
+    android:layout_margin="24dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <!-- お祝いアイコン -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎉"
+            android:textSize="64sp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 達成メッセージ -->
+        <TextView
+            android:id="@+id/tvAchievementMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="目標金額に達成しました！"
+            android:textColor="#FFC107"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- 達成した目標名 -->
+        <TextView
+            android:id="@+id/tvAchievedGoalName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="商品名"
+            android:textColor="#424242"
+            android:textSize="16sp"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- OKボタン -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAchievementOK"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="やったね！"
+            app:backgroundTint="#FFC107"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="28dp"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

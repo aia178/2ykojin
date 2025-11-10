@@ -20,6 +20,7 @@ import android.widget.ImageButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import coil.load
+import com.google.firebase.Timestamp
 import java.time.temporal.TemporalAmount
 
 class MainActivity : AppCompatActivity() {
@@ -66,12 +67,14 @@ class MainActivity : AppCompatActivity() {
         allGoalsListener?.remove()
     }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "DefaultLocale")
     private fun loadUserData() {
         selectedGoalListener = firestore.collection("goals")
             .whereEqualTo("selected", true)
             .whereEqualTo("active", true)
             .addSnapshotListener { snapshots, error ->
+
+
                 if (error != null) {
                     Toast.makeText(this, "読み込み失敗: ${error.message}", Toast.LENGTH_SHORT).show()
                     return@addSnapshotListener
@@ -83,10 +86,29 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val document = snapshots.documents[0]
+                val goalId = document.id
                 val itemName = document.getString("itemName") ?: ""
                 val imageUrl = document.getString("imageUrl") ?: ""
                 val targetAmountValue = document.getLong("targetAmount")?.toInt() ?: 0
                 val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
+                val achievedAt = document.getTimestamp("achievedAt")
+
+                // 達成してるか確認
+                // 達成してるか確認
+                if (currentAmountValue >= targetAmountValue && achievedAt == null) {
+                    // Firestore更新
+                    firestore.collection("goals")
+                        .document(goalId)
+                        .update("achievedAt", Timestamp.now())  // ← com.google.firebase. は不要
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "目標達成おめでとうございます！", Toast.LENGTH_LONG).show()
+                            // TODO: 後で達成ダイアログに変更
+                            // showAchievementDialog(goalId, itemName, targetAmountValue)
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
 
                 val remaining = targetAmountValue - currentAmountValue
                 val remainingText = if (remaining > 0) {
