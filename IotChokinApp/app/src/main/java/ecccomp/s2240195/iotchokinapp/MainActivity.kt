@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.ProgressBar
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.Toast
 import android.view.LayoutInflater
 import android.view.View
@@ -21,7 +20,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import coil.load
 import com.google.firebase.Timestamp
-import java.time.temporal.TemporalAmount
+import android.widget.LinearLayout
 
 class MainActivity : AppCompatActivity() {
 
@@ -93,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                 val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
                 val achievedAt = document.getTimestamp("achievedAt")
 
-                // 達成してるか確認
+
                 // 達成してるか確認
                 if (currentAmountValue >= targetAmountValue && achievedAt == null) {
                     // Firestore更新
@@ -101,9 +100,10 @@ class MainActivity : AppCompatActivity() {
                         .document(goalId)
                         .update("achievedAt", Timestamp.now())  // ← com.google.firebase. は不要
                         .addOnSuccessListener {
-                            Toast.makeText(this, "目標達成おめでとうございます！", Toast.LENGTH_LONG).show()
-                            // TODO: 後で達成ダイアログに変更
-                            // showAchievementDialog(goalId, itemName, targetAmountValue)
+                            // 達成ダイアログを表示
+                            val itemUrl = document.getString("itemUrl") ?: ""
+                            val goalType = document.getString("goalType") ?: "custom"
+                            showAchievementDialog(itemName, itemUrl, goalType)
                         }
                         .addOnFailureListener { e ->
                             Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -456,6 +456,39 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener { e ->
                     Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
+        }
+
+        dialog.show()
+    }
+    private fun showAchievementDialog(goalName: String, itemUrl: String, goalType: String) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_achievement, null)
+
+        val tvAchievedGoalName = dialogView.findViewById<TextView>(R.id.tvAchievedGoalName)
+        val btnGoToPurchase = dialogView.findViewById<MaterialButton>(R.id.btnGoToPurchase)
+        val btnCloseDialog = dialogView.findViewById<MaterialButton>(R.id.btnCloseDialog)
+
+        tvAchievedGoalName.text = goalName
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        // 楽天商品の場合は「購入ページへ」ボタンを表示
+        if (goalType == "rakuten" && itemUrl.isNotEmpty()) {
+            btnGoToPurchase.visibility = View.VISIBLE
+            btnGoToPurchase.setOnClickListener {
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(itemUrl))
+                startActivity(intent)
+                dialog.dismiss()
+            }
+        }
+
+        // 閉じるボタン（カスタム目標も楽天商品も共通）
+        btnCloseDialog.setOnClickListener {
+            dialog.dismiss()
         }
 
         dialog.show()

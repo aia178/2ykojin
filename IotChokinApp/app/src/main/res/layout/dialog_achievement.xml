@@ -29,7 +29,7 @@
             android:id="@+id/tvAchievementMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="目標金額に達成しました！"
+            android:text="目標達成おめでとうございます！"
             android:textColor="#FFC107"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -45,16 +45,27 @@
             android:textSize="16sp"
             android:layout_marginBottom="24dp"/>
 
-        <!-- OKボタン -->
+        <!-- 購入ボタン（楽天商品用） -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAchievementOK"
+            android:id="@+id/btnGoToPurchase"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="やったね！"
-            app:backgroundTint="#FFC107"
+            android:text="購入ページへ"
+            app:backgroundTint="#4CAF50"
             android:textColor="#FFFFFF"
             app:cornerRadius="28dp"
             android:textSize="16sp"
-            android:textStyle="bold"/>
+            android:visibility="gone"/> <!-- 初期は非表示 -->
+
+        <!-- 閉じるボタン（共通） -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseDialog"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="閉じる"
+            app:backgroundTint="#757575"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="28dp"
+            android:textSize="16sp"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
