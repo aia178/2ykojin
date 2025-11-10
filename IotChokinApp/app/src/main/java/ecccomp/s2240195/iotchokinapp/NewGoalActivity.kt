@@ -267,8 +267,8 @@ class NewGoalActivity : AppCompatActivity() {
     }
 
     private fun showEditGoalNameDialog(product: RakutenProduct) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_goal_name, null)
-        val etEditGoalName = dialogView.findViewById<TextInputEditText>(R.id.etEditGoalName)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
+        val etEditGoalName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
 
         val shortName = TextUtils.shortenProductName(product.itemName)
         etEditGoalName.setText(shortName)
@@ -279,11 +279,11 @@ class NewGoalActivity : AppCompatActivity() {
             .setCancelable(true)
             .create()
 
-        dialogView.findViewById<MaterialButton>(R.id.btnDialogCancel).setOnClickListener {
+        dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
             dialog.dismiss()
         }
 
-        dialogView.findViewById<MaterialButton>(R.id.btnDialogSave).setOnClickListener {
+        dialogView.findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
             val editedName = etEditGoalName.text.toString().trim()
             if (editedName.isEmpty()) {
                 Toast.makeText(this, "目標名を入力してください", Toast.LENGTH_SHORT).show()
