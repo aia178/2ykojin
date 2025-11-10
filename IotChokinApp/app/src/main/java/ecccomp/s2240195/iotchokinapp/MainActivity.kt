@@ -3,6 +3,8 @@ package ecccomp.s2240195.iotchokinapp
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
@@ -277,6 +279,7 @@ class MainActivity : AppCompatActivity() {
                 .setCancelable(true) // 外タップで閉じる
                 .create()
 
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             // ⑤ボタンのクリックイベント
             dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
                 dialog.dismiss()
@@ -325,6 +328,8 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .setCancelable(true)
             .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
         // キャンセルボタン
         dialogView.findViewById<MaterialButton>(R.id.btnCancelAmount).setOnClickListener {
@@ -383,6 +388,8 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .setCancelable(true)
             .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
         // 最初は削除ボタンを無効化
         btnConfirmDelete.isEnabled = false
