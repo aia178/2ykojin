@@ -54,8 +54,13 @@ class MainActivity : AppCompatActivity() {
 
         loadUserData()
 
-        findViewById<com.google.android.material.button.MaterialButton>(R.id.btnNewGoal)?.setOnClickListener {
+        findViewById<MaterialButton>(R.id.btnNewGoal)?.setOnClickListener {
             val intent = Intent(this, NewGoalActivity::class.java)
+            startActivity(intent)
+        }
+
+        findViewById<MaterialButton>(R.id.btnHistory) ?.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
     }

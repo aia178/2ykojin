@@ -24,6 +24,10 @@ class NewGoalActivity : AppCompatActivity() {
     private lateinit var etSearchProduct: TextInputEditText
     private lateinit var btnSearch: MaterialButton
     private lateinit var recyclerView: RecyclerView
+    private lateinit var searchLoading: View
+    private lateinit var emptySearchView: View
+    private lateinit var errorSearchView: View
+    private lateinit var btnRetrySearch: MaterialButton
     private lateinit var etTargetAmount: TextInputEditText
     private lateinit var etGoalName: TextInputEditText
     private lateinit var btnSave: MaterialButton
@@ -31,6 +35,9 @@ class NewGoalActivity : AppCompatActivity() {
 
     private var productList = mutableListOf<RakutenProduct>()
     private lateinit var adapter: ProductAdapter
+
+    // 最後の検索キーワードを保持（リトライ用）
+    private var lastSearchKeyword = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +55,12 @@ class NewGoalActivity : AppCompatActivity() {
                 Toast.makeText(this, "2文字以上で入力してください", Toast.LENGTH_SHORT).show()
             } else {
                 searchProducts(keyword)
+            }
+        }
+
+        btnRetrySearch.setOnClickListener {
+            if (lastSearchKeyword.isNotEmpty()) {
+                searchProducts(lastSearchKeyword)
             }
         }
 
@@ -75,6 +88,10 @@ class NewGoalActivity : AppCompatActivity() {
         etSearchProduct = findViewById(R.id.etSearchProduct)
         btnSearch = findViewById(R.id.btnSearch)
         recyclerView = findViewById(R.id.rvSearchResults)
+        searchLoading = findViewById(R.id.searchLoading)
+        emptySearchView = findViewById(R.id.emptySearchView)
+        errorSearchView = findViewById(R.id.errorSearchView)
+        btnRetrySearch = findViewById(R.id.btnRetrySearch)
         btnSave = findViewById(R.id.btnSave)
         etGoalName = findViewById(R.id.etGoalName)
         etTargetAmount = findViewById(R.id.etTargetAmount)
@@ -108,7 +125,23 @@ class NewGoalActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * 商品検索を実行し、UI状態を管理するメソッド
+     */
+    @SuppressLint("NotifyDataSetChanged")
     private fun searchProducts(keyword: String) {
+        // キーワードを保存（リトライ用）
+        lastSearchKeyword = keyword
+
+        // 1. 検索前の状態設定
+        recyclerView.visibility = View.GONE
+        emptySearchView.visibility = View.GONE
+        errorSearchView.visibility = View.GONE
+        searchLoading.visibility = View.VISIBLE
+
+        // 検索ボタンを無効化（連打防止）
+        btnSearch.isEnabled = false
+
         val call = RakutenApiClient.apiService.searchItem(
             applicationId = Config.APPLICATION_ID,
             keyword = keyword,
@@ -117,21 +150,23 @@ class NewGoalActivity : AppCompatActivity() {
         )
 
         call.enqueue(object : Callback<RakutenApiResponse> {
-            @SuppressLint("NotifyDataSetChanged")
             override fun onResponse(
                 call: Call<RakutenApiResponse>,
                 response: Response<RakutenApiResponse>
             ) {
+                // 検索完了後、ボタンを再有効化
+                btnSearch.isEnabled = true
+                searchLoading.visibility = View.GONE
+
                 if (response.isSuccessful) {
                     val apiResponse = response.body()
                     val items = apiResponse?.Items
 
                     if (items.isNullOrEmpty()) {
-                        Toast.makeText(
-                            this@NewGoalActivity,
-                            "検索結果がありません",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        // 2. 検索結果が空の場合
+                        productList.clear()
+                        adapter.notifyDataSetChanged()
+                        emptySearchView.visibility = View.VISIBLE
                         return
                     }
 
@@ -152,15 +187,16 @@ class NewGoalActivity : AppCompatActivity() {
                     }
 
                     if (products.isEmpty()) {
-                        Toast.makeText(
-                            this@NewGoalActivity,
-                            "有効な検索結果がありませんでした",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        // 有効な結果がない場合も空状態を表示
+                        productList.clear()
+                        adapter.notifyDataSetChanged()
+                        emptySearchView.visibility = View.VISIBLE
                     } else {
+                        // 3. 検索成功：結果を表示
                         productList.clear()
                         productList.addAll(products)
                         adapter.notifyDataSetChanged()
+                        recyclerView.visibility = View.VISIBLE
 
                         Toast.makeText(
                             this@NewGoalActivity,
@@ -169,6 +205,8 @@ class NewGoalActivity : AppCompatActivity() {
                         ).show()
                     }
                 } else {
+                    // 4. 通信エラー（HTTPエラー）
+                    errorSearchView.visibility = View.VISIBLE
                     Toast.makeText(
                         this@NewGoalActivity,
                         "通信エラー: ${response.code()}",
@@ -178,6 +216,12 @@ class NewGoalActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<RakutenApiResponse>, t: Throwable) {
+                // 検索完了後、ボタンを再有効化
+                btnSearch.isEnabled = true
+                searchLoading.visibility = View.GONE
+
+                // 5. 通信失敗（ネットワークエラーなど）
+                errorSearchView.visibility = View.VISIBLE
                 Toast.makeText(
                     this@NewGoalActivity,
                     "通信失敗: ${t.message}",
@@ -188,7 +232,6 @@ class NewGoalActivity : AppCompatActivity() {
     }
 
     private fun saveGoalToFirestore(product: RakutenProduct) {
-        // 商品名を自動短縮
         val shortName = TextUtils.shortenProductName(product.itemName)
 
         val wish = Wish(
@@ -296,4 +339,3 @@ class NewGoalActivity : AppCompatActivity() {
         dialog.show()
     }
 }
-

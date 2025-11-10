@@ -2,6 +2,7 @@ package ecccomp.s2240195.iotchokinapp
 
 import android.os.Bundle
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -15,7 +16,7 @@ class HistoryActivity : AppCompatActivity() {
 
     private lateinit var firestore: FirebaseFirestore
     private lateinit var rvHistory: RecyclerView
-    private lateinit var emptyView: TextView
+    private lateinit var emptyView: LinearLayout
     private lateinit var btnBack: ImageButton
     private lateinit var adapter: HistoryAdapter
     private var depositList = mutableListOf<Deposit>()

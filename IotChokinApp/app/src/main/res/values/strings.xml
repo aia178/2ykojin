@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">SaveWish</string>
     <string name="LogonameSaveWish">SaveWish</string>
     <string name="logo_subtitle">IoT貯金箱</string>
@@ -49,4 +49,6 @@
 
     <!-- コンテンツ説明 -->
     <string name="product_image_description">商品画像</string>
+
+    <string name="retry">再試行</string>
 </resources>
