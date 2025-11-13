@@ -17,3 +17,4 @@ platformio.ini.local
 
 findjob\.gitignore
 src/config.h
+src/firestore_client.h
