@@ -72,7 +72,7 @@ bool sendDeposit(int amount, const String& goalId, const String& goalName) {
         Serial.println("レスポンスボディ:");
         Serial.println(response);
 
-        // Firestoreのcreateは 200 or 201 を返すことが多い
+        
         if (httpCode == HTTP_CODE_OK || httpCode == 200 || httpCode == 201) {
             http.end();
             return true;

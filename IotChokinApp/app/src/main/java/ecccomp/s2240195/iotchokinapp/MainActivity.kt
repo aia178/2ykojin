@@ -498,4 +498,87 @@ class MainActivity : AppCompatActivity() {
 
         dialog.show()
     }
+// 目標ごとの currentAmount を deposits から再計算して更新
+private fun updateCurrentAmount(goalId: String) {
+    
+    val deposit = firestore.collection("deposits")
+        .whereEqualTo("goalId", goalId)
+        .whereEqualTo("active", true)
+
+    // TODO: get() でクエリを実行して結果(snapshot)を受け取る
+    deposit.get().addOnSuccessListener { snapshot ->
+        var totalAmount = 0
+        for (document in snapshot.documents) {
+            val amount = document.getLong("amount")?.toInt() ?: 0
+            totalAmount += amount
+        }
+        firestore.collection("goals")
+        .document(goalId)
+        .update("currentAmount", totalAmount)
+        .addOnSuccessListener {
+            Log.d("MainActivity", "currentAmount updated: $totalAmount")
+        }
+        .addOnFailureListener { e ->
+            Log.e("MainActivity", "currentAmount update failed: ${e.message}")
+        } 
+    }
+    .addOnFailureListener { e ->
+        Log.e("MainActivity", "Deposits retrieval failed: ${e.message}")
+    }
+    
+}
+
+// 選択中の目標（selected=true & active=true）を読み込んで画面に反映する
+private fun loadSelectedGoal() {
+    val query = firestore.collection("goals")
+        .whereEqualTo("selected", true)
+        .whereEqualTo("active", true)
+        .limit(1)
+    
+    query.addSnapshotListener { snapshots, error ->
+        // --- エラー処理 ---
+        if (error != null) {
+            Log.e("MainActivity", "目標の取得に失敗: ${error.message}")
+            showNoGoalState()
+            return@addSnapshotListener
+        }
+        
+        if (snapshots == null || snapshots.isEmpty) {
+            showNoGoalState()
+            return@addSnapshotListener
+        }
+        
+        // --- ドキュメントを取得 ---
+        val document = snapshots.documents[0]
+        val goalId = document.id
+        val wish = document.toObject(Wish::class.java)
+        
+        if (wish == null) {
+            showNoGoalState()
+            return@addSnapshotListener
+        }
+        
+        // --- UI更新 ---
+        selectedGoalCard.visibility = View.VISIBLE
+        noGoalLayout.visibility = View.GONE
+        
+        goalTitle.text = wish.itemName
+        targetAmount.text = "¥${String.format("%,d", wish.targetAmount)}"
+        currentAmount.text = "¥${String.format("%,d", wish.currentAmount)}"
+        
+        // 画像読み込み
+        if (wish.imageUrl.isNotEmpty()) {
+            productImage.load(wish.imageUrl) {
+                crossfade(true)
+                placeholder(android.R.drawable.ic_menu_gallery)
+                error(android.R.drawable.ic_menu_gallery)
+            }
+        } else {
+            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
+        
+        // --- currentAmount の再計算（非同期） ---
+        updateCurrentAmount(goalId)
+        }
+    }
 }
