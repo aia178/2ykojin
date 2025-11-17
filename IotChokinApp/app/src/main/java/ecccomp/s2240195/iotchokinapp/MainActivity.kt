@@ -580,5 +580,5 @@ private fun loadSelectedGoal() {
         // --- currentAmount の再計算（非同期） ---
         updateCurrentAmount(goalId)
         }
-    }
+        
 }

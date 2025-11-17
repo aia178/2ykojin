@@ -1,7 +1,15 @@
-#include <Arduino.h>  // 追加
+#include <Arduino.h>  
 #include <WiFi.h>
 #include "config.h"
 #include "firestore_client.h"
+#include <HX711.h>
+
+#define DATA 32
+#define SCK 25
+
+HX711 scale;
+
+const float calibration = 2280.0F;  
 
 void setup()
 {
@@ -24,6 +32,13 @@ void setup()
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+
+    scale.begin(DATA, SCK);
+
+    scale.set_scale(calibration);
+    scale.tare();
+    Serial.println("HX711 initialized.");
+    
 }
 
 void loop()
