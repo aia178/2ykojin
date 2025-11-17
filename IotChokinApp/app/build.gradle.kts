@@ -64,4 +64,7 @@ dependencies {
 
     // コルーチン（非同期処理用）
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // 折れ線グラフ用
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

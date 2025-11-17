@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.Timestamp
+import com.github.mikephil.charting.charts.LineChart
 
 class HistoryActivity : AppCompatActivity() {
 
@@ -19,7 +20,10 @@ class HistoryActivity : AppCompatActivity() {
     private lateinit var emptyView: LinearLayout
     private lateinit var btnBack: ImageButton
     private lateinit var adapter: HistoryAdapter
+    private lateinit var lineChartHistory: LineChart
     private var depositList = mutableListOf<Deposit>()
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +33,8 @@ class HistoryActivity : AppCompatActivity() {
         setupRecyclerView()
         firestore = FirebaseFirestore.getInstance()
         loadHistoryData()
+        setupChartAppearance()
+
 
         // 戻るボタンで前の画面へ戻る
         btnBack.setOnClickListener {
@@ -41,6 +47,7 @@ class HistoryActivity : AppCompatActivity() {
         btnBack = findViewById(R.id.btnBack)
         rvHistory = findViewById(R.id.rvHistory)
         emptyView = findViewById(R.id.emptyView)
+        lineChartHistory = findViewById(R.id.lineChartHistory)
     }
 
     // RecyclerViewの設定
@@ -48,6 +55,23 @@ class HistoryActivity : AppCompatActivity() {
         adapter = HistoryAdapter(depositList)
         rvHistory.adapter = adapter
         rvHistory.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+    }
+
+    private fun setupChartAppearance() {
+        // データが無いときの表示
+        lineChartHistory.setNoDataText("まだ貯金履歴がありません")
+
+        // 説明テキストは非表示
+        lineChartHistory.description.isEnabled = false
+
+        // タッチ操作基本設定
+        lineChartHistory.setTouchEnabled(true)
+        lineChartHistory.isDragEnabled = true
+        lineChartHistory.setScaleEnabled(true)
+        lineChartHistory.setPinchZoom(true)
+
+        // アニメーション（Y方向）
+        lineChartHistory.animateY(800)
     }
 
     // Firestoreから履歴取得

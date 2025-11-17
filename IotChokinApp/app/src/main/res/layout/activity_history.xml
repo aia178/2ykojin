@@ -63,6 +63,17 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/lineChartHistory"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- RecyclerView（履歴一覧） -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvHistory"
@@ -74,6 +85,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:padding="12dp"
         android:clipToPadding="false"/>
+
 
     <!-- 空の状態表示 -->
     <LinearLayout

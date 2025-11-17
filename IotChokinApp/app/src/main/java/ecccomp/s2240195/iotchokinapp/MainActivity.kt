@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.ProgressBar
@@ -529,12 +530,13 @@ private fun updateCurrentAmount(goalId: String) {
 }
 
 // 選択中の目標（selected=true & active=true）を読み込んで画面に反映する
+@SuppressLint("DefaultLocale")
 private fun loadSelectedGoal() {
     val query = firestore.collection("goals")
         .whereEqualTo("selected", true)
         .whereEqualTo("active", true)
         .limit(1)
-    
+
     query.addSnapshotListener { snapshots, error ->
         // --- エラー処理 ---
         if (error != null) {
@@ -542,30 +544,26 @@ private fun loadSelectedGoal() {
             showNoGoalState()
             return@addSnapshotListener
         }
-        
+
         if (snapshots == null || snapshots.isEmpty) {
             showNoGoalState()
             return@addSnapshotListener
         }
-        
+
         // --- ドキュメントを取得 ---
         val document = snapshots.documents[0]
         val goalId = document.id
         val wish = document.toObject(Wish::class.java)
-        
+
         if (wish == null) {
             showNoGoalState()
             return@addSnapshotListener
         }
-        
-        // --- UI更新 ---
-        selectedGoalCard.visibility = View.VISIBLE
-        noGoalLayout.visibility = View.GONE
-        
+
         goalTitle.text = wish.itemName
         targetAmount.text = "¥${String.format("%,d", wish.targetAmount)}"
         currentAmount.text = "¥${String.format("%,d", wish.currentAmount)}"
-        
+
         // 画像読み込み
         if (wish.imageUrl.isNotEmpty()) {
             productImage.load(wish.imageUrl) {
@@ -576,9 +574,9 @@ private fun loadSelectedGoal() {
         } else {
             productImage.setImageResource(android.R.drawable.ic_menu_gallery)
         }
-        
+
         // --- currentAmount の再計算（非同期） ---
         updateCurrentAmount(goalId)
-        }
-        
+    }
+}
 }
