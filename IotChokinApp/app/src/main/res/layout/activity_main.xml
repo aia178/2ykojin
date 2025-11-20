@@ -303,16 +303,17 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnGraph"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    style="@style/Widget.Material3.Button.ElevatedButton"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginBottom="16dp"
-                    android:text="推移グラフを見る"
+                    android:text="選択中目標のグラフを見る"
                     android:textSize="16sp"
+                    android:textStyle="bold"
                     app:icon="@android:drawable/ic_menu_sort_by_size"
                     app:iconGravity="textStart"
-                    app:strokeColor="#FFC107"
-                    android:textColor="#FFC107" />
+                    app:backgroundTint="#FFC107"
+                    android:textColor="#FFFFFF" />
 
                 <!-- すべての目標セクション -->
                 <TextView
