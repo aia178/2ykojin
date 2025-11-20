@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedGoalListener: ListenerRegistration? = null
     private var allGoalsListener: ListenerRegistration? = null
+    private var currentGoalId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        findViewById<MaterialButton>(R.id.btnHistory) ?.setOnClickListener {
+        findViewById<MaterialButton>(R.id.btnHistory)?.setOnClickListener {
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
@@ -69,21 +70,27 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, GraphActivity::class.java)
             startActivity(intent)
         }
+
+        findViewById<android.widget.Button>(R.id.btnDebugDeposit)?.setOnClickListener {
+            addDebugDeposit()
+        }
     }
+
+    private var currentGoalDepositsListener: ListenerRegistration? = null
 
     override fun onDestroy() {
         super.onDestroy()
         selectedGoalListener?.remove()
         allGoalsListener?.remove()
+        currentGoalDepositsListener?.remove()
     }
 
-    @SuppressLint("SetTextI18n", "DefaultLocale")
+    @SuppressLint("SetTextI18n")
     private fun loadUserData() {
         selectedGoalListener = firestore.collection("goals")
             .whereEqualTo("selected", true)
             .whereEqualTo("active", true)
             .addSnapshotListener { snapshots, error ->
-
 
                 if (error != null) {
                     Toast.makeText(this, "読み込み失敗: ${error.message}", Toast.LENGTH_SHORT).show()
@@ -96,20 +103,26 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val document = snapshots.documents[0]
-                val goalId = document.id
+                val newGoalId = document.id
+                
+                // 目標が変わった場合、または初めての場合、預金リスナーを再設定
+                if (currentGoalId != newGoalId) {
+                    currentGoalId = newGoalId
+                    setupCurrentGoalDepositsListener(newGoalId)
+                }
+
                 val itemName = document.getString("itemName") ?: ""
                 val imageUrl = document.getString("imageUrl") ?: ""
                 val targetAmountValue = document.getLong("targetAmount")?.toInt() ?: 0
                 val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
                 val achievedAt = document.getTimestamp("achievedAt")
 
-
                 // 達成してるか確認
                 if (currentAmountValue >= targetAmountValue && achievedAt == null) {
                     // Firestore更新
                     firestore.collection("goals")
-                        .document(goalId)
-                        .update("achievedAt", Timestamp.now())  // ← com.google.firebase. は不要
+                        .document(currentGoalId!!)
+                        .update("achievedAt", Timestamp.now())
                         .addOnSuccessListener {
                             // 達成ダイアログを表示
                             val itemUrl = document.getString("itemUrl") ?: ""
@@ -156,10 +169,41 @@ class MainActivity : AppCompatActivity() {
         loadStatistics()
     }
 
+    // 選択中の目標に対する貯金履歴を監視し、合計額を計算して目標ドキュメントを更新する
+    private fun setupCurrentGoalDepositsListener(goalId: String) {
+        currentGoalDepositsListener?.remove()
+        
+        currentGoalDepositsListener = firestore.collection("deposits")
+            .whereEqualTo("goalId", goalId)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e("MainActivity", "Deposits listener failed: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    var totalAmount = 0
+                    for (doc in snapshots.documents) {
+                        val amount = doc.getLong("amount")?.toInt() ?: 0
+                        totalAmount += amount
+                    }
+
+                    // Firestoreのgoalsコレクションを更新
+                    // 注意: これにより selectedGoalListener が発火し、UIが更新される
+                    firestore.collection("goals")
+                        .document(goalId)
+                        .update("currentAmount", totalAmount)
+                        .addOnFailureListener { e ->
+                            Log.e("MainActivity", "Failed to update goal amount: ${e.message}")
+                        }
+                }
+            }
+    }
+
     @SuppressLint("SetTextI18n")
     private fun loadStatistics() {
-        val tvMonthlySavings = findViewById<TextView>(R.id.tvMonthlySavings) // Need to add ID to layout
-        val tvTotalSavings = findViewById<TextView>(R.id.tvTotalSavings)     // Need to add ID to layout
+        val tvMonthlySavings = findViewById<TextView>(R.id.tvMonthlySavings)
+        val tvTotalSavings = findViewById<TextView>(R.id.tvTotalSavings)
 
         // Calculate start of this month
         val calendar = java.util.Calendar.getInstance()
@@ -170,20 +214,27 @@ class MainActivity : AppCompatActivity() {
         calendar.set(java.util.Calendar.MILLISECOND, 0)
         val startOfMonth = Timestamp(calendar.time)
 
+        // get() ではなく addSnapshotListener を使用してリアルタイム更新
         firestore.collection("deposits")
-            .get()
-            .addOnSuccessListener { documents ->
+            .addSnapshotListener { documents, error ->
+                if (error != null) {
+                    Log.e("MainActivity", "Statistics listener failed: ${error.message}")
+                    return@addSnapshotListener
+                }
+
                 var total = 0
                 var monthly = 0
 
-                for (doc in documents) {
-                    val amount = doc.getLong("amount")?.toInt() ?: 0
-                    val timestamp = doc.getTimestamp("timestamp")
+                documents?.let {
+                    for (doc in it) {
+                        val amount = doc.getLong("amount")?.toInt() ?: 0
+                        val timestamp = doc.getTimestamp("timestamp")
 
-                    total += amount
+                        total += amount
 
-                    if (timestamp != null && timestamp.seconds >= startOfMonth.seconds) {
-                        monthly += amount
+                        if (timestamp != null && timestamp.seconds >= startOfMonth.seconds) {
+                            monthly += amount
+                        }
                     }
                 }
 
@@ -220,11 +271,10 @@ class MainActivity : AppCompatActivity() {
                             0
                         }
 
-                        
                         val cardView = LayoutInflater.from(this).inflate(
                             R.layout.item_goal_card,
-                            allGoalsContainer,  // 親を指定
-                            false  
+                            allGoalsContainer,
+                            false
                         ) as com.google.android.material.card.MaterialCardView
 
                         if (isSelected) {
@@ -332,69 +382,55 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditNameDialog(goalId: String, currentName: String) {
-            // 目標名編集ダイアログの実装
-            // レイアウトをinflateして変数に保存
-            val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_display_name, null)
+        val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
 
-            // inflate したView の中から EditText を探す
-            val etDisplayName = dialogView.findViewById<TextInputEditText>(R.id.etDisplayName)
+        etDisplayName.setText(currentName)
+        val safePosition = currentName.length.coerceAtMost(40)
+        etDisplayName.setSelection(safePosition)
 
-            // 現在の名前をセット
-            etDisplayName.setText(currentName)
-            val safePosition = currentName.length.coerceAtMost(40)
-            etDisplayName.setSelection(safePosition)
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
 
-            // ダイアログを作成
-            val dialog = AlertDialog.Builder(this)
-                .setView(dialogView) // inflate したView全体をセット
-                .setCancelable(true) // 外タップで閉じる
-                .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            // ⑤ボタンのクリックイベント
-            dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
-                dialog.dismiss()
-            }
-
-            dialogView.findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
-                val newName = etDisplayName.text.toString().trim()
-
-                if (newName.isEmpty()) {
-                    Toast.makeText(this, "目標名は空にできません", Toast.LENGTH_SHORT).show()
-                } else if (newName.length < 2) {
-                    Toast.makeText(this, "2文字以上で入力してください", Toast.LENGTH_SHORT).show()
-                } else {
-                    // Firestore更新
-                    firestore.collection("goals")
-                        .document(goalId)
-                        .update("itemName", newName)
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "目標名を更新しました", Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                }
-            }
-
-            // ダイアログ表示
-            dialog.show()
+        dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
         }
 
+        dialogView.findViewById<MaterialButton>(R.id.btnSave).setOnClickListener {
+            val newName = etDisplayName.text.toString().trim()
+
+            if (newName.isEmpty()) {
+                Toast.makeText(this, "目標名は空にできません", Toast.LENGTH_SHORT).show()
+            } else if (newName.length < 2) {
+                Toast.makeText(this, "2文字以上で入力してください", Toast.LENGTH_SHORT).show()
+            } else {
+                firestore.collection("goals")
+                    .document(goalId)
+                    .update("itemName", newName)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "目標名を更新しました", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            }
+        }
+
+        dialog.show()
+    }
 
     private fun showEditAmountDialog(goalId: String, currentAmount: Int) {
-        // 正しいレイアウトをinflate
         val dialogView = layoutInflater.inflate(R.layout.dialog_edit_amount, null)
-
-        // EditTextを取得
         val etAmount = dialogView.findViewById<TextInputEditText>(R.id.etAmount)
 
-        // 現在の金額をセット（IntをStringに変換）
         etAmount.setText(currentAmount.toString())
-        etAmount.setSelection(currentAmount.toString().length) // カーソルを末尾に
+        etAmount.setSelection(currentAmount.toString().length)
 
-        // ダイアログを作成
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .setCancelable(true)
@@ -402,35 +438,29 @@ class MainActivity : AppCompatActivity() {
 
         dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
-        // キャンセルボタン
         dialogView.findViewById<MaterialButton>(R.id.btnCancelAmount).setOnClickListener {
             dialog.dismiss()
         }
 
-        // 保存ボタン
         dialogView.findViewById<MaterialButton>(R.id.btnSaveAmount).setOnClickListener {
             val newAmountStr = etAmount.text.toString().trim()
 
-            // 空チェック
             if (newAmountStr.isEmpty()) {
                 Toast.makeText(this, "金額を入力してください", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // 数値に変換できるかチェック
             val newAmount = newAmountStr.toIntOrNull()
             if (newAmount == null) {
                 Toast.makeText(this, "正しい数値を入力してください", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // 範囲チェック（1〜10,000,000円）
             if (newAmount < 1 || newAmount > 10_000_000) {
                 Toast.makeText(this, "1〜10,000,000円の範囲で設定してください", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Firestore更新（Intで保存）
             firestore.collection("goals")
                 .document(goalId)
                 .update("targetAmount", newAmount)
@@ -443,7 +473,6 @@ class MainActivity : AppCompatActivity() {
                 }
         }
 
-        // ⑦ダイアログ表示
         dialog.show()
     }
 
@@ -462,11 +491,9 @@ class MainActivity : AppCompatActivity() {
 
         dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
 
-        // 最初は削除ボタンを無効化
         btnConfirmDelete.isEnabled = false
         btnConfirmDelete.alpha = 0.5f
 
-        // チェックボックスの状態で削除ボタンを有効/無効化
         cbAlsoDeleteHistory.setOnCheckedChangeListener { _, isChecked ->
             btnConfirmDelete.isEnabled = isChecked
             btnConfirmDelete.alpha = if (isChecked) 1.0f else 0.5f
@@ -477,22 +504,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnConfirmDelete.setOnClickListener {
-            // 履歴を取得して一括削除
             firestore.collection("deposits")
                 .whereEqualTo("goalId", goalId)
                 .get()
                 .addOnSuccessListener { snapshot ->
                     val batch = firestore.batch()
 
-                    // 履歴を削除
                     snapshot.documents.forEach { doc ->
                         batch.delete(doc.reference)
                     }
 
-                    // 目標を削除
                     batch.delete(firestore.collection("goals").document(goalId))
 
-                    // 一括実行
                     batch.commit()
                         .addOnSuccessListener {
                             Toast.makeText(this, "目標と履歴を削除しました", Toast.LENGTH_SHORT).show()
@@ -509,6 +532,7 @@ class MainActivity : AppCompatActivity() {
 
         dialog.show()
     }
+
     private fun showAchievementDialog(goalName: String, itemUrl: String, goalType: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_achievement, null)
 
@@ -525,7 +549,6 @@ class MainActivity : AppCompatActivity() {
 
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-        // 楽天商品の場合は「購入ページへ」ボタンを表示
         if (goalType == "rakuten" && itemUrl.isNotEmpty()) {
             btnGoToPurchase.visibility = View.VISIBLE
             btnGoToPurchase.setOnClickListener {
@@ -535,91 +558,33 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 閉じるボタン（カスタム目標も楽天商品も共通）
         btnCloseDialog.setOnClickListener {
             dialog.dismiss()
         }
 
         dialog.show()
     }
-// 目標ごとの currentAmount を deposits から再計算して更新
-private fun updateCurrentAmount(goalId: String) {
-    
-    val deposit = firestore.collection("deposits")
-        .whereEqualTo("goalId", goalId)
-        .whereEqualTo("active", true)
 
-    // TODO: get() でクエリを実行して結果(snapshot)を受け取る
-    deposit.get().addOnSuccessListener { snapshot ->
-        var totalAmount = 0
-        for (document in snapshot.documents) {
-            val amount = document.getLong("amount")?.toInt() ?: 0
-            totalAmount += amount
-        }
-        firestore.collection("goals")
-        .document(goalId)
-        .update("currentAmount", totalAmount)
-        .addOnSuccessListener {
-            Log.d("MainActivity", "currentAmount updated: $totalAmount")
-        }
-        .addOnFailureListener { e ->
-            Log.e("MainActivity", "currentAmount update failed: ${e.message}")
-        } 
-    }
-    .addOnFailureListener { e ->
-        Log.e("MainActivity", "Deposits retrieval failed: ${e.message}")
-    }
-    
-}
-
-// 選択中の目標（selected=true & active=true）を読み込んで画面に反映する
-@SuppressLint("DefaultLocale")
-private fun loadSelectedGoal() {
-    val query = firestore.collection("goals")
-        .whereEqualTo("selected", true)
-        .whereEqualTo("active", true)
-        .limit(1)
-
-    query.addSnapshotListener { snapshots, error ->
-        // --- エラー処理 ---
-        if (error != null) {
-            Log.e("MainActivity", "目標の取得に失敗: ${error.message}")
-            showNoGoalState()
-            return@addSnapshotListener
+    private fun addDebugDeposit() {
+        if (currentGoalId == null) {
+            Toast.makeText(this, "目標が選択されていません", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        if (snapshots == null || snapshots.isEmpty) {
-            showNoGoalState()
-            return@addSnapshotListener
-        }
+        val deposit = hashMapOf(
+            "amount" to 100,
+            "goalId" to currentGoalId,
+            "goalName" to goalTitle.text.toString(),
+            "timestamp" to Timestamp.now()
+        )
 
-        // --- ドキュメントを取得 ---
-        val document = snapshots.documents[0]
-        val goalId = document.id
-        val wish = document.toObject(Wish::class.java)
-
-        if (wish == null) {
-            showNoGoalState()
-            return@addSnapshotListener
-        }
-
-        goalTitle.text = wish.itemName
-        targetAmount.text = "¥${String.format("%,d", wish.targetAmount)}"
-        currentAmount.text = "¥${String.format("%,d", wish.currentAmount)}"
-
-        // 画像読み込み
-        if (wish.imageUrl.isNotEmpty()) {
-            productImage.load(wish.imageUrl) {
-                crossfade(true)
-                placeholder(android.R.drawable.ic_menu_gallery)
-                error(android.R.drawable.ic_menu_gallery)
+        firestore.collection("deposits")
+            .add(deposit)
+            .addOnSuccessListener {
+                Toast.makeText(this, "デバッグ: 100円投入しました", Toast.LENGTH_SHORT).show()
             }
-        } else {
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
-        }
-
-        // --- currentAmount の再計算（非同期） ---
-        updateCurrentAmount(goalId)
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "デバッグエラー: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
-}
 }

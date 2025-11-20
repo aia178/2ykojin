@@ -441,8 +441,18 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
+                </LinearLayout>
+
+                <!-- デバッグ用：100円投入ボタン（後で削除） -->
+                <Button
+                    android:id="@+id/btnDebugDeposit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="[DEBUG] 100円投入"
+                    android:backgroundTint="#607D8B"
+                    android:layout_marginTop="16dp" />
+
             </LinearLayout>
-        </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -15,7 +15,9 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import coil.load
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -33,6 +35,9 @@ class GraphActivity : AppCompatActivity() {
     private lateinit var tvCurrentAmount: android.widget.TextView
     private lateinit var tvTargetAmount: android.widget.TextView
     private lateinit var tvRemainingAmount: android.widget.TextView
+
+    private var goalListener: ListenerRegistration? = null
+    private var depositsListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +61,12 @@ class GraphActivity : AppCompatActivity() {
 
         setupChart()
         loadSelectedGoal()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        goalListener?.remove()
+        depositsListener?.remove()
     }
 
     private fun setupChart() {
@@ -92,19 +103,31 @@ class GraphActivity : AppCompatActivity() {
     }
 
     private fun loadSelectedGoal() {
-        firestore.collection("goals")
+        goalListener = firestore.collection("goals")
             .whereEqualTo("selected", true)
             .whereEqualTo("active", true)
             .limit(1)
-            .get()
-            .addOnSuccessListener { documents ->
-                if (!documents.isEmpty) {
+            .addSnapshotListener { documents, error ->
+                if (error != null) {
+                    Log.e("GraphActivity", "Error loading goal", error)
+                    Toast.makeText(this, "目標の読み込みに失敗しました", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
+                }
+
+                if (documents != null && !documents.isEmpty) {
                     val doc = documents.documents[0]
-                    currentGoalId = doc.id
+                    val newGoalId = doc.id
+                    
+                    // 目標が変わったら履歴リスナーを再設定
+                    if (currentGoalId != newGoalId) {
+                        currentGoalId = newGoalId
+                        setupDepositsListener(newGoalId)
+                    }
+
                     targetAmount = doc.getLong("targetAmount")?.toInt() ?: 0
                     val currentAmount = doc.getLong("currentAmount")?.toInt() ?: 0
                     val goalName = doc.getString("itemName") ?: "目標"
-                    val imageUrl = doc.getString("imageUrl")
+                    val imageUrl = doc.getString("imageUrl") ?: ""
                     val createdAt = doc.getTimestamp("createdAt")?.toDate()
 
                     // Update UI
@@ -121,26 +144,21 @@ class GraphActivity : AppCompatActivity() {
                         tvGoalDate.text = sdf.format(createdAt)
                     }
 
-                    // Load Image (using Glide if available, otherwise placeholder)
-                    // Assuming Glide is not yet added, using placeholder or simple logic if needed.
-                    // For now, just keeping the placeholder or setting if bitmap available.
-                    // To properly load image from URL, we need Glide or Picasso. 
-                    // Since I cannot add dependencies without user permission and build.gradle check, 
-                    // I will leave the placeholder for now or try basic method if requested.
-                    // The user asked for design, so placeholder is fine for now unless they asked for image loading.
-                    // Actually, MainActivity uses Glide? Let's check. 
-                    // I'll assume Glide is available if MainActivity uses it, but I haven't checked build.gradle for Glide.
-                    // I'll just leave the placeholder for now to avoid build errors.
+                    // Load Image with Coil
+                    if (imageUrl.isNotEmpty()) {
+                        imgGoal.load(imageUrl) {
+                            crossfade(true)
+                            placeholder(android.R.drawable.ic_menu_gallery)
+                            error(android.R.drawable.ic_menu_gallery)
+                        }
+                    } else {
+                        imgGoal.setImageResource(android.R.drawable.ic_menu_gallery)
+                    }
 
                     addGoalLine(targetAmount.toFloat())
-                    loadDeposits(doc.id)
                 } else {
                     Toast.makeText(this, "選択中の目標がありません", Toast.LENGTH_SHORT).show()
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e("GraphActivity", "Error loading goal", e)
-                Toast.makeText(this, "目標の読み込みに失敗しました", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -159,56 +177,62 @@ class GraphActivity : AppCompatActivity() {
         leftAxis.addLimitLine(limitLine)
     }
 
-    private fun loadDeposits(goalId: String) {
-        firestore.collection("deposits")
+    private fun setupDepositsListener(goalId: String) {
+        depositsListener?.remove()
+
+        depositsListener = firestore.collection("deposits")
             .whereEqualTo("goalId", goalId)
             .orderBy("timestamp", Query.Direction.ASCENDING)
-            .get()
-            .addOnSuccessListener { documents ->
-                val entries = ArrayList<Entry>()
-                var cumulativeAmount = 0f
-
-                for (doc in documents) {
-                    val amount = doc.getLong("amount")?.toFloat() ?: 0f
-                    val timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
-                    
-                    cumulativeAmount += amount
-                    entries.add(Entry(timestamp.toDate().time.toFloat(), cumulativeAmount))
+            .addSnapshotListener { documents, error ->
+                if (error != null) {
+                    Log.e("GraphActivity", "Error loading deposits", error)
+                    return@addSnapshotListener
                 }
 
-                if (entries.isNotEmpty()) {
-                    val primaryColor = Color.parseColor("#FFC107")
+                if (documents != null) {
+                    val entries = ArrayList<Entry>()
+                    var cumulativeAmount = 0f
 
-                    val dataSet = LineDataSet(entries, "貯金額")
-                    dataSet.color = primaryColor
-                    dataSet.setCircleColor(primaryColor)
-                    dataSet.valueTextColor = Color.BLACK
-                    dataSet.lineWidth = 3f
-                    dataSet.circleRadius = 4f
-                    dataSet.setDrawCircleHole(true)
-                    dataSet.circleHoleColor = Color.WHITE
-                    
-                    dataSet.setDrawValues(false)
-                    
-                    // Bezier Curve for smooth line
-                    dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
-                    
-                    // Fill
-                    dataSet.setDrawFilled(true)
-                    dataSet.fillColor = primaryColor
-                    dataSet.fillAlpha = 30
+                    for (doc in documents) {
+                        val amount = doc.getLong("amount")?.toFloat() ?: 0f
+                        val timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
+                        
+                        cumulativeAmount += amount
+                        entries.add(Entry(timestamp.toDate().time.toFloat(), cumulativeAmount))
+                    }
 
-                    val lineData = LineData(dataSet)
-                    chart.data = lineData
-                    chart.invalidate()
-                    chart.animateY(1000)
-                } else {
-                    chart.clear()
+                    if (entries.isNotEmpty()) {
+                        val primaryColor = Color.parseColor("#FFC107")
+
+                        val dataSet = LineDataSet(entries, "貯金額")
+                        dataSet.color = primaryColor
+                        dataSet.setCircleColor(primaryColor)
+                        dataSet.valueTextColor = Color.BLACK
+                        dataSet.lineWidth = 3f
+                        dataSet.circleRadius = 4f
+                        dataSet.setDrawCircleHole(true)
+                        dataSet.circleHoleColor = Color.WHITE
+                        
+                        dataSet.setDrawValues(false)
+                        
+                        // Bezier Curve for smooth line
+                        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+                        
+                        // Fill
+                        dataSet.setDrawFilled(true)
+                        dataSet.fillColor = primaryColor
+                        dataSet.fillAlpha = 30
+
+                        val lineData = LineData(dataSet)
+                        chart.data = lineData
+                        
+                        // データの更新を通知
+                        chart.notifyDataSetChanged()
+                        chart.invalidate()
+                    } else {
+                        chart.clear()
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e("GraphActivity", "Error loading deposits", e)
-                Toast.makeText(this, "履歴の読み込みに失敗しました", Toast.LENGTH_SHORT).show()
             }
     }
 }
