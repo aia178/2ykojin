@@ -301,6 +301,19 @@
                         android:textColor="#FFFFFF" />
                 </LinearLayout>
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGraph"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="推移グラフを見る"
+                    android:textSize="16sp"
+                    app:icon="@android:drawable/ic_menu_sort_by_size"
+                    app:iconGravity="textStart"
+                    app:strokeColor="#FFC107"
+                    android:textColor="#FFC107" />
+
                 <!-- すべての目標セクション -->
                 <TextView
                     android:layout_width="match_parent"
@@ -377,6 +390,7 @@
                                 android:textAlignment="center" />
 
                             <TextView
+                                android:id="@+id/tvMonthlySavings"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
@@ -414,6 +428,7 @@
                                 android:textAlignment="center" />
 
                             <TextView
+                                android:id="@+id/tvTotalSavings"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"

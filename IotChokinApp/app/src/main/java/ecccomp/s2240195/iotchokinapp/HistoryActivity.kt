@@ -1,9 +1,9 @@
 package ecccomp.s2240195.iotchokinapp
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,6 +12,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.Timestamp
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.components.XAxis
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
+
 
 class HistoryActivity : AppCompatActivity() {
 
@@ -70,11 +78,12 @@ class HistoryActivity : AppCompatActivity() {
         lineChartHistory.setScaleEnabled(true)
         lineChartHistory.setPinchZoom(true)
 
-        // アニメーション（Y方向）
+        // アニメーション
         lineChartHistory.animateY(800)
     }
 
     // Firestoreから履歴取得
+    @SuppressLint("NotifyDataSetChanged")
     private fun loadHistoryData() {
         firestore.collection("deposits")
             .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -103,8 +112,11 @@ class HistoryActivity : AppCompatActivity() {
 
                 adapter.notifyDataSetChanged()
                 showListState()
+                updateChartWithDeposits(depositList)
             }
     }
+
+
 
     // 履歴0件の表示
     private fun showEmptyState() {
@@ -116,5 +128,73 @@ class HistoryActivity : AppCompatActivity() {
     private fun showListState() {
         emptyView.visibility = android.view.View.GONE
         rvHistory.visibility = android.view.View.VISIBLE
+    }
+
+    /**
+     * 履歴データを使って「全体の累計貯金額」の折れ線グラフを描画する
+     */
+    private fun updateChartWithDeposits(deposits: List<Deposit>) {
+        if (deposits.isEmpty()) {
+            lineChartHistory.clear()
+            return
+        }
+
+        // 日付昇順にソート（古い順）
+        val sorted = deposits.sortedBy { it.timestamp.toDate().time }
+
+        val entries = ArrayList<Entry>()
+        var runningTotal = 0f
+
+        // X軸用に時刻(long)を保持
+        val xValues = mutableListOf<Long>()
+
+        sorted.forEachIndexed { index, deposit ->
+            runningTotal += deposit.amount.toFloat()
+            val timeMillis = deposit.timestamp.toDate().time
+
+            // Xは index を使う（実際の時刻はラベル側で表示）
+            entries.add(Entry(index.toFloat(), runningTotal))
+            xValues.add(timeMillis)
+        }
+
+        // DataSet を作成
+        val dataSet = LineDataSet(entries, "累計貯金額").apply {
+            color = android.graphics.Color.parseColor("#4CAF50")
+            lineWidth = 2f
+            setDrawCircles(true)
+            circleRadius = 3f
+            setCircleColor(android.graphics.Color.parseColor("#388E3C"))
+            setDrawValues(false)
+            mode = LineDataSet.Mode.CUBIC_BEZIER
+        }
+
+        val lineData = LineData(dataSet)
+        lineChartHistory.data = lineData
+
+        // X軸を「日付ラベル」にする
+        val xAxis = lineChartHistory.xAxis
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.granularity = 1f
+        xAxis.setDrawGridLines(false)
+
+        val dateFormat = SimpleDateFormat("M/d", Locale.getDefault())
+
+        xAxis.valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(
+            xValues.map { millis ->
+                dateFormat.format(Date(millis))
+            }
+        )
+
+        // Y軸（左だけ使う）
+        val leftAxis = lineChartHistory.axisLeft
+        leftAxis.setDrawGridLines(true)
+        leftAxis.axisMinimum = 0f
+
+        val rightAxis = lineChartHistory.axisRight
+        rightAxis.isEnabled = false
+
+        lineChartHistory.legend.isEnabled = false
+
+        lineChartHistory.invalidate() // 再描画
     }
 }

@@ -64,6 +64,11 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
+
+        findViewById<MaterialButton>(R.id.btnGraph)?.setOnClickListener {
+            val intent = Intent(this, GraphActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onDestroy() {
@@ -148,6 +153,44 @@ class MainActivity : AppCompatActivity() {
             }
 
         loadAllGoals()
+        loadStatistics()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun loadStatistics() {
+        val tvMonthlySavings = findViewById<TextView>(R.id.tvMonthlySavings) // Need to add ID to layout
+        val tvTotalSavings = findViewById<TextView>(R.id.tvTotalSavings)     // Need to add ID to layout
+
+        // Calculate start of this month
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfMonth = Timestamp(calendar.time)
+
+        firestore.collection("deposits")
+            .get()
+            .addOnSuccessListener { documents ->
+                var total = 0
+                var monthly = 0
+
+                for (doc in documents) {
+                    val amount = doc.getLong("amount")?.toInt() ?: 0
+                    val timestamp = doc.getTimestamp("timestamp")
+
+                    total += amount
+
+                    if (timestamp != null && timestamp.seconds >= startOfMonth.seconds) {
+                        monthly += amount
+                    }
+                }
+
+                // Update UI
+                tvMonthlySavings.text = "¥${String.format("%,d", monthly)}"
+                tvTotalSavings.text = "¥${String.format("%,d", total)}"
+            }
     }
 
     @SuppressLint("SetTextI18n", "InflateParams")
@@ -177,11 +220,11 @@ class MainActivity : AppCompatActivity() {
                             0
                         }
 
-                        // 修正: allGoalsContainerを親として指定し、attachToRoot=falseを明示
+                        
                         val cardView = LayoutInflater.from(this).inflate(
                             R.layout.item_goal_card,
                             allGoalsContainer,  // 親を指定
-                            false  // すぐにattachしない
+                            false  
                         ) as com.google.android.material.card.MaterialCardView
 
                         if (isSelected) {
