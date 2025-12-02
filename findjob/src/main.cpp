@@ -6,6 +6,7 @@
 #include <HX711.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 
 #define DATA 32
 #define SCK 25
@@ -49,117 +50,92 @@ void checkWiFi() {
 }
 
 bool fetchSelectedGoal() {
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi未接続のため、目標を取得できません");
-        return false;
-    }
+    if (WiFi.status() != WL_CONNECTED) return false;
 
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
 
     String url = String(FIRESTORE_BASE_URL) + ":runQuery?key=" + FIREBASE_API_KEY;
-    
+
+    String queryJson =
+        "{"
+        "  \"structuredQuery\": {"
+        "    \"from\": [{\"collectionId\": \"goals\"}],"
+        "    \"where\": {"
+        "      \"fieldFilter\": {"
+        "        \"field\": {\"fieldPath\": \"selected\"},"
+        "        \"op\": \"EQUAL\","
+        "        \"value\": {\"booleanValue\": true}"
+        "      }"
+        "    },"
+        "    \"limit\": 1"
+        "  }"
+        "}";
+
     if (!http.begin(client, url)) {
-        Serial.println("http.begin() に失敗しました (fetchSelectedGoal)");
+        Serial.println("Connection failed");
         return false;
     }
 
     http.addHeader("Content-Type", "application/json");
+    int httpCode = http.POST(queryJson);
 
-    String jsonBody =
-        "{"
-          "\"structuredQuery\": {"
-            "\"from\": [{\"collectionId\": \"goals\"}],"
-            "\"where\": {"
-              "\"compositeFilter\": {"
-                "\"op\": \"AND\","
-                "\"filters\": ["
-                  "{"
-                    "\"fieldFilter\": {"
-                      "\"field\": {\"fieldPath\": \"selected\"},"
-                      "\"op\": \"EQUAL\","
-                      "\"value\": {\"booleanValue\": true}"
-                    "}"
-                  "},"
-                  "{"
-                    "\"fieldFilter\": {"
-                      "\"field\": {\"fieldPath\": \"active\"},"
-                      "\"op\": \"EQUAL\","
-                      "\"value\": {\"booleanValue\": true}"
-                    "}"
-                  "}"
-                "]"
-              "}"
-            "},"
-            "\"limit\": 1"
-          "}"
-        "}";
+    if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+        DynamicJsonDocument doc(4096);
+        DeserializationError err = deserializeJson(doc, payload);
 
-    int httpCode = http.POST(jsonBody);
-
-    if (httpCode <= 0) {
-        Serial.printf("fetchSelectedGoal POST失敗: %s\n", http.errorToString(httpCode).c_str());
-        http.end();
-        return false;
-    }
-
-    Serial.printf("HTTPレスポンスコード: %d\n", httpCode);
-    String response = http.getString();
-    
-    http.end();
-
-    int namePos = response.indexOf("\"name\":\"");
-    if (namePos < 0) {
-        Serial.println("document.name が見つかりませんでした");
-        return false;
-    }
-    namePos += String("\"name\":\"").length();
-    int nameEnd = response.indexOf("\"", namePos);
-    if (nameEnd < 0) {
-        Serial.println("document.name の終端が見つかりませんでした");
-        return false;
-    }
-
-    String fullName = response.substring(namePos, nameEnd);
-    int lastSlash = fullName.lastIndexOf('/');
-    if (lastSlash < 0 || lastSlash == (int)fullName.length() - 1) {
-        Serial.println("goalId の抽出に失敗しました");
-        return false;
-    }
-
-    String goalId = fullName.substring(lastSlash + 1);
-
-    int itemNamePos = response.indexOf("\"itemName\"");
-    String goalName = "";
-
-    if (itemNamePos >= 0) {
-        int stringValuePos = response.indexOf("\"stringValue\":\"", itemNamePos);
-        if (stringValuePos >= 0) {
-            stringValuePos += String("\"stringValue\":\"").length();
-            int stringValueEnd = response.indexOf("\"", stringValuePos);
-            if (stringValueEnd > stringValuePos) {
-                goalName = response.substring(stringValuePos, stringValueEnd);
-            }
+        if (err) {
+            Serial.print("JSON parse failed: ");
+            Serial.println(err.c_str());
+            http.end();
+            return false;
         }
+
+        if (!doc.is<JsonArray>() || doc.size() == 0) {
+            Serial.println("No selected goal found (empty result).");
+            hasCurrentGoal = false;
+            http.end();
+            return false;
+        }
+
+        JsonObject document = doc[0]["document"];
+        if (document.isNull()) {
+            Serial.println("document field missing.");
+            hasCurrentGoal = false;
+            http.end();
+            return false;
+        }
+
+        String fullPath = document["name"] | "";
+        if (fullPath.isEmpty()) {
+            Serial.println("document.name missing.");
+            hasCurrentGoal = false;
+            http.end();
+            return false;
+        }
+
+        int lastSlash = fullPath.lastIndexOf('/');
+        currentGoalId = fullPath.substring(lastSlash + 1);
+
+        JsonObject fields = document["fields"];
+        currentGoalName = fields["itemName"]["stringValue"] | "Unknown Goal";
+
+        hasCurrentGoal = true;
+        Serial.println("=== Goal Updated ===");
+        Serial.println("ID: " + currentGoalId);
+        Serial.println("Name: " + currentGoalName);
+
+        http.end();
+        return true;
+    } else {
+        Serial.printf("Fetch failed, error: %d\n", httpCode);
+        Serial.println(http.getString());
     }
 
-    if (goalName.length() == 0) {
-        goalName = "NoNameGoal";
-    }
-
-    currentGoalId   = goalId;
-    currentGoalName = goalName;
-    hasCurrentGoal  = true;
-
-    Serial.println("===== 選択中の目標 =====");
-    Serial.print("ID: ");
-    Serial.println(currentGoalId);
-    Serial.print("名前: ");
-    Serial.println(currentGoalName);
-    Serial.println("========================");
-
-    return true;
+    http.end();
+    return false;
 }
 
 bool sendFirestore(int amount){
