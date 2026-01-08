@@ -1,12 +1,17 @@
 package ecccomp.s2240195.iotchokinapp
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.tabs.TabLayout
@@ -15,6 +20,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 
 class NewGoalActivity : AppCompatActivity() {
 
@@ -33,11 +41,28 @@ class NewGoalActivity : AppCompatActivity() {
     private lateinit var btnSave: MaterialButton
     private lateinit var firestore: FirebaseFirestore
 
+    // カスタム目標の画像選択関連
+    private lateinit var cardImagePicker: MaterialCardView
+    private lateinit var ivCustomGoalImage: ImageView
+    private lateinit var placeholderImagePicker: LinearLayout
+    private lateinit var btnRemoveImage: MaterialButton
+    private var selectedImageUri: Uri? = null
+
     private var productList = mutableListOf<RakutenProduct>()
     private lateinit var adapter: ProductAdapter
 
     // 最後の検索キーワードを保持（リトライ用）
     private var lastSearchKeyword = ""
+
+    // 画像選択用のランチャー
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            showSelectedImage(it)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,6 +120,22 @@ class NewGoalActivity : AppCompatActivity() {
         btnSave = findViewById(R.id.btnSave)
         etGoalName = findViewById(R.id.etGoalName)
         etTargetAmount = findViewById(R.id.etTargetAmount)
+
+        // 画像選択UI
+        cardImagePicker = findViewById(R.id.cardImagePicker)
+        ivCustomGoalImage = findViewById(R.id.ivCustomGoalImage)
+        placeholderImagePicker = findViewById(R.id.placeholderImagePicker)
+        btnRemoveImage = findViewById(R.id.btnRemoveImage)
+
+        // 画像選択カードのクリックで画像を選択
+        cardImagePicker.setOnClickListener {
+            imagePickerLauncher.launch("image/*")
+        }
+
+        // 画像削除ボタン
+        btnRemoveImage.setOnClickListener {
+            removeSelectedImage()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -175,7 +216,7 @@ class NewGoalActivity : AppCompatActivity() {
                             return@mapNotNull null
                         }
 
-                        val imageUrl = item.mediumImageUrls?.firstOrNull() ?: ""
+                        val imageUrl = item.getHighQualityImageUrl() ?: ""
 
                         RakutenProduct(
                             itemName = item.itemName,
@@ -259,12 +300,19 @@ class NewGoalActivity : AppCompatActivity() {
     }
 
     private fun saveCustomGoalToFirestore(goalName: String, targetAmount: Int) {
+        // 画像が選択されている場合はローカルにコピー
+        val imageUrl = if (selectedImageUri != null) {
+            saveImageToLocalStorage(selectedImageUri!!) ?: ""
+        } else {
+            ""
+        }
+
         val wish = Wish(
             goalType = "custom",
             itemName = goalName,
             targetAmount = targetAmount,
             currentAmount = 0,
-            imageUrl = "",
+            imageUrl = imageUrl,
             itemUrl = "",
             itemCode = "",
             active = true,
@@ -281,6 +329,25 @@ class NewGoalActivity : AppCompatActivity() {
                 Toast.makeText(this, "保存失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         )
+    }
+
+    // 画像をアプリのローカルストレージにコピー
+    private fun saveImageToLocalStorage(uri: Uri): String? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val fileName = "goal_${UUID.randomUUID()}.jpg"
+            val file = File(filesDir, fileName)
+            
+            FileOutputStream(file).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            inputStream.close()
+            
+            file.absolutePath
+        } catch (e: Exception) {
+            Toast.makeText(this, "画像保存エラー: ${e.message}", Toast.LENGTH_SHORT).show()
+            null
+        }
     }
 
     private fun saveGoalExclusively(
@@ -337,5 +404,24 @@ class NewGoalActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    // 選択した画像をプレビュー表示
+    private fun showSelectedImage(uri: Uri) {
+        ivCustomGoalImage.load(uri) {
+            crossfade(true)
+        }
+        ivCustomGoalImage.visibility = View.VISIBLE
+        placeholderImagePicker.visibility = View.GONE
+        btnRemoveImage.visibility = View.VISIBLE
+    }
+
+    // 画像選択を解除
+    private fun removeSelectedImage() {
+        selectedImageUri = null
+        ivCustomGoalImage.visibility = View.GONE
+        ivCustomGoalImage.setImageResource(android.R.drawable.ic_menu_gallery)
+        placeholderImagePicker.visibility = View.VISIBLE
+        btnRemoveImage.visibility = View.GONE
     }
 }

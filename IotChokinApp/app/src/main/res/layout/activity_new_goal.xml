@@ -276,6 +276,81 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
+                    <!-- 画像選択エリア -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardImagePicker"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E0E0E0"
+                        app:strokeWidth="2dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="16dp"
+                            android:minHeight="150dp">
+
+                            <!-- 画像プレビュー -->
+                            <ImageView
+                                android:id="@+id/ivCustomGoalImage"
+                                android:layout_width="120dp"
+                                android:layout_height="120dp"
+                                android:scaleType="centerCrop"
+                                android:src="@android:drawable/ic_menu_gallery"
+                                android:background="#F5F5F5"
+                                android:visibility="gone" />
+
+                            <!-- 画像未選択時のプレースホルダー -->
+                            <LinearLayout
+                                android:id="@+id/placeholderImagePicker"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:gravity="center">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="📷"
+                                    android:textSize="40sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:text="タップして画像を選択"
+                                    android:textColor="#9E9E9E"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="(任意)"
+                                    android:textColor="#BDBDBD"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 画像削除ボタン -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRemoveImage"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:text="画像を削除"
+                        android:textColor="#F44336"
+                        android:visibility="gone"
+                        app:icon="@android:drawable/ic_menu_close_clear_cancel"
+                        app:iconTint="#F44336" />
+
                     <!-- 目標名入力 -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"

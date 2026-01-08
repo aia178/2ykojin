@@ -18,6 +18,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import coil.load
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -146,7 +147,12 @@ class GraphActivity : AppCompatActivity() {
 
                     // Load Image with Coil
                     if (imageUrl.isNotEmpty()) {
-                        imgGoal.load(imageUrl) {
+                        val imageSource = if (imageUrl.startsWith("/")) {
+                            File(imageUrl)
+                        } else {
+                            imageUrl
+                        }
+                        imgGoal.load(imageSource) {
                             crossfade(true)
                             placeholder(android.R.drawable.ic_menu_gallery)
                             error(android.R.drawable.ic_menu_gallery)

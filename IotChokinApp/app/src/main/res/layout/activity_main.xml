@@ -54,15 +54,7 @@
                         android:textSize="28sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/LogoSubtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center"
-                        android:text="@string/logo_subtitle"
-                        android:textColor="#FFFFFFCC"
-                        android:textSize="13sp" />
+        
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -443,14 +435,6 @@
                 </LinearLayout>
                 </LinearLayout>
 
-                <!-- デバッグ用：100円投入ボタン（後で削除） -->
-                <Button
-                    android:id="@+id/btnDebugDeposit"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="[DEBUG] 100円投入"
-                    android:backgroundTint="#607D8B"
-                    android:layout_marginTop="16dp" />
 
             </LinearLayout>
     </ScrollView>

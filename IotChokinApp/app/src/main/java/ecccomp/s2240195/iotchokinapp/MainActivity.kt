@@ -22,6 +22,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import coil.load
 import com.google.firebase.Timestamp
 import android.widget.LinearLayout
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedGoalListener: ListenerRegistration? = null
     private var allGoalsListener: ListenerRegistration? = null
+    private var statisticsListener: ListenerRegistration? = null
     private var currentGoalId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,9 +73,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        findViewById<android.widget.Button>(R.id.btnDebugDeposit)?.setOnClickListener {
-            addDebugDeposit()
-        }
+        
+        
     }
 
     private var currentGoalDepositsListener: ListenerRegistration? = null
@@ -83,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         selectedGoalListener?.remove()
         allGoalsListener?.remove()
         currentGoalDepositsListener?.remove()
+        statisticsListener?.remove()
     }
 
     @SuppressLint("SetTextI18n")
@@ -155,7 +157,13 @@ class MainActivity : AppCompatActivity() {
                 progressBar.progress = progress.coerceIn(0, 100)
 
                 if (imageUrl.isNotEmpty()) {
-                    productImage.load(imageUrl) {
+                    // ローカルファイルかURLかを判定
+                    val imageSource = if (imageUrl.startsWith("/")) {
+                        File(imageUrl)  // ローカルファイル
+                    } else {
+                        imageUrl  // URL
+                    }
+                    productImage.load(imageSource) {
                         crossfade(true)
                         placeholder(android.R.drawable.ic_menu_gallery)
                         error(android.R.drawable.ic_menu_gallery)
@@ -215,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         val startOfMonth = Timestamp(calendar.time)
 
         // get() ではなく addSnapshotListener を使用してリアルタイム更新
-        firestore.collection("deposits")
+        statisticsListener = firestore.collection("deposits")
             .addSnapshotListener { documents, error ->
                 if (error != null) {
                     Log.e("MainActivity", "Statistics listener failed: ${error.message}")
@@ -290,7 +298,12 @@ class MainActivity : AppCompatActivity() {
                         val goalProgress = cardView.findViewById<TextView>(R.id.goalCardProgress)
 
                         if (imageUrl.isNotEmpty()) {
-                            goalImage.load(imageUrl) {
+                            val imageSource = if (imageUrl.startsWith("/")) {
+                                File(imageUrl)
+                            } else {
+                                imageUrl
+                            }
+                            goalImage.load(imageSource) {
                                 crossfade(true)
                                 placeholder(android.R.drawable.ic_menu_gallery)
                             }
@@ -308,7 +321,7 @@ class MainActivity : AppCompatActivity() {
                         val btnMenu = cardView.findViewById<ImageButton>(R.id.btnGoalMenu)
 
                         btnMenu.setOnClickListener { view ->
-                            showGoalMenu(view, goalId, itemName, targetAmountValue)
+                            showGoalMenu(view, goalId, itemName, targetAmountValue, imageUrl)
                         }
 
                         allGoalsContainer.addView(cardView)
@@ -356,7 +369,8 @@ class MainActivity : AppCompatActivity() {
         view: View,
         goalId: String,
         goalName: String,
-        targetAmount: Int
+        targetAmount: Int,
+        imageUrl: String
     ) {
         val popup = android.widget.PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.menu_goal_card_overflow, popup.menu)
@@ -372,7 +386,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.action_delete_goal -> {
-                    showDeleteConfirmDialog(goalId)
+                    deleteGoal(goalId, imageUrl)
                     true
                 }
                 else -> false
@@ -476,61 +490,41 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showDeleteConfirmDialog(goalId: String) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_confirm_delete_goal, null)
+    private fun deleteGoal(goalId: String, imageUrl: String) {
+        firestore.collection("deposits")
+            .whereEqualTo("goalId", goalId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val batch = firestore.batch()
 
-        val cbAlsoDeleteHistory = dialogView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
-            R.id.cbAlsoDeleteHistory
-        )
-        val btnConfirmDelete = dialogView.findViewById<MaterialButton>(R.id.btnConfirmDelete)
+                snapshot.documents.forEach { doc ->
+                    batch.delete(doc.reference)
+                }
 
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
+                batch.delete(firestore.collection("goals").document(goalId))
 
-        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
-
-        btnConfirmDelete.isEnabled = false
-        btnConfirmDelete.alpha = 0.5f
-
-        cbAlsoDeleteHistory.setOnCheckedChangeListener { _, isChecked ->
-            btnConfirmDelete.isEnabled = isChecked
-            btnConfirmDelete.alpha = if (isChecked) 1.0f else 0.5f
-        }
-
-        dialogView.findViewById<MaterialButton>(R.id.btnCancelDelete).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        btnConfirmDelete.setOnClickListener {
-            firestore.collection("deposits")
-                .whereEqualTo("goalId", goalId)
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    val batch = firestore.batch()
-
-                    snapshot.documents.forEach { doc ->
-                        batch.delete(doc.reference)
+                batch.commit()
+                    .addOnSuccessListener {
+                        // ローカル画像ファイルがあれば削除
+                        if (imageUrl.startsWith("/")) {
+                            try {
+                                val file = File(imageUrl)
+                                if (file.exists()) {
+                                    file.delete()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Failed to delete image: ${e.message}")
+                            }
+                        }
+                        Toast.makeText(this, "目標を削除しました", Toast.LENGTH_SHORT).show()
                     }
-
-                    batch.delete(firestore.collection("goals").document(goalId))
-
-                    batch.commit()
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "目標と履歴を削除しました", Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-        }
-
-        dialog.show()
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun showAchievementDialog(goalName: String, itemUrl: String, goalType: String) {

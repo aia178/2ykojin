@@ -9,11 +9,11 @@
 #include <ArduinoJson.h>
 
 #define DATA 32
-#define SCK 25
+#define SCK  33
 
 HX711 scale;
 
-const float calibration = 2280.0F;
+const float calibration = -1967.0F;
 
 String currentGoalId   = "";
 String currentGoalName = "";
@@ -26,20 +26,24 @@ enum State {
 };
 
 State currentState = WAITING;
-float lastWeight = 0.0f;
+
+float lastWeight  = 0.0f;
+float baseWeight  = 0.0f;
+
 unsigned long lastChangeTime = 0;
 unsigned long lastSendTime   = 0;
 unsigned long lastFetchTime  = 0;
 
 const unsigned long STABLE_TIME    = 1000;
 const unsigned long COOLDOWN_TIME  = 3000;
-const unsigned long FETCH_INTERVAL = 60000;
+const unsigned long FETCH_INTERVAL = 5000;  // 5秒（発表用に短縮）
+
 const float WEIGHT_THRESHOLD       = 0.5f;
 const float STABLE_DELTA_THRESHOLD = 0.1f;
 
 void checkWiFi() {
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi切断、再接続中...");
+        Serial.println("WiFi切断、再接続中.");
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED) {
             delay(500);
@@ -163,18 +167,14 @@ bool sendFirestore(int amount){
 }
 
 float getWeight(){
-    float weight = scale.get_units();
+    float weight = scale.get_units(20);
     return weight;
 }
 
-int returnAmount(float weight) {
-    if (weight >= 0.7f && weight < 1.5f) return 1;
-    if (weight >= 3.3f && weight < 3.8f) return 5;
-    if (weight >= 3.8f && weight < 4.2f) return 50;
-    if (weight >= 4.2f && weight < 4.65f) return 10;
-    if (weight >= 4.65f && weight < 5.5f) return 100;
-    if (weight >= 6.5f && weight < 7.5f) return 500;
-    
+int returnAmount(float delta) {
+    if (delta >= 0.8f && delta < 2.5f) return 1;    // 1円
+    if (delta >= 4.0f && delta < 6.0f) return 100;  // 100円
+    if (delta >= 6.0f && delta < 9.0f) return 500;  // 500円
     return 0;
 }
 
@@ -198,6 +198,22 @@ void setup()
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
 
+    delay(1000);
+
+    configTime(9 * 3600, 0, "ntp.nict.jp", "pool.ntp.org", "time.google.com");
+    Serial.println("NTP同期を開始...");
+    int ntpRetry = 0;
+    while (time(nullptr) < 1000000000 && ntpRetry < 40) {
+        delay(500);
+        Serial.print(".");
+        ntpRetry++;
+    }
+    if (time(nullptr) > 1000000000) {
+        Serial.println("\nNTP同期完了");
+    } else {
+        Serial.println("\nNTP同期タイムアウト（タイムスタンプが不正確な可能性があります）");
+    }
+
     if (!fetchSelectedGoal()) {
         Serial.println("目標を取得できませんでした");
     }
@@ -207,11 +223,12 @@ void setup()
     scale.tare();
     Serial.println("HX711 初期化完了\n");
 
-    currentState = WAITING;
-    lastWeight   = 0.0f;
-    lastChangeTime = millis();
-    lastSendTime   = 0;
-    lastFetchTime  = millis();
+    currentState    = WAITING;
+    lastWeight      = 0.0f;
+    baseWeight      = 0.0f;
+    lastChangeTime  = millis();
+    lastSendTime    = 0;
+    lastFetchTime   = millis();
 }
 
 void loop()
@@ -219,7 +236,7 @@ void loop()
     unsigned long now = millis();
 
     if (now - lastFetchTime > FETCH_INTERVAL) {
-        Serial.println("定期的な目標再取得...");
+        Serial.println("定期的な目標再取得.");
         fetchSelectedGoal();
         lastFetchTime = now;
     }
@@ -227,54 +244,66 @@ void loop()
     float weight = getWeight();
 
     switch (currentState) {
-        case WAITING:
+        case WAITING: {
             if (std::abs(weight - lastWeight) > WEIGHT_THRESHOLD) {
-                currentState = DETECTING;
-                lastChangeTime = now;
+                currentState    = DETECTING;
+                lastChangeTime  = now;
+                baseWeight      = lastWeight;
                 Serial.println("コイン検知中...");
             }
             lastWeight = weight;
             break;
+        }
 
         case DETECTING: {
-            float delta = std::abs(weight - lastWeight);
-
-            if (delta < STABLE_DELTA_THRESHOLD) {
-                if (now - lastChangeTime > STABLE_TIME) {
-                    int amount = returnAmount(weight);
-                    if (amount > 0) {
-                        Serial.print("判定: ");
-                        Serial.print(amount);
-                        Serial.println(" 円");
-
-                        sendFirestore(amount);
-
-                        currentState = COOLDOWN;
-                        lastSendTime = now;
-
-                        scale.tare();
-                        lastWeight = 0.0f;
-                    } else {
-                        Serial.println("判定失敗");
-                        currentState = WAITING;
-                        scale.tare();
-                        lastWeight = 0.0f;
-                    }
-                }
-            } else {
+            if (std::abs(weight - lastWeight) > STABLE_DELTA_THRESHOLD) {
                 lastChangeTime = now;
             }
-
             lastWeight = weight;
+
+            if (now - lastChangeTime > STABLE_TIME) {
+                Serial.print("安定した重量検出: ");
+                Serial.print(weight, 2);
+                Serial.println(" g");
+
+                float delta = weight - baseWeight;
+                Serial.print("差分(コイン分): ");
+                Serial.print(delta, 2);
+                Serial.println(" g");
+
+                int amount = returnAmount(delta);
+
+                if (amount > 0) {
+                    Serial.print("判定: ");
+                    Serial.print(amount);
+                    Serial.println(" 円");
+
+                    sendFirestore(amount);
+
+                    currentState = COOLDOWN;
+                    lastSendTime = now;
+
+                    scale.tare();
+                    lastWeight = 0.0f;
+                    baseWeight = 0.0f;
+                } else {
+                    Serial.println("判定失敗");
+                    currentState = WAITING;
+                    scale.tare();
+                    lastWeight = 0.0f;
+                    baseWeight = 0.0f;
+                }
+            }
             break;
         }
 
         case COOLDOWN:
             if (now - lastSendTime > COOLDOWN_TIME) {
-                Serial.println("クールダウン終了\n");
+                Serial.println("準備OK\n");
                 currentState = WAITING;
                 scale.tare();
                 lastWeight = 0.0f;
+                baseWeight = 0.0f;
             }
             break;
     }

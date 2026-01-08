@@ -29,7 +29,8 @@ data class RakutenApiResponse(
     val pageCount: Int? = null
 )
 
-// 商品詳細（Wrapperは不要）
+// 商品詳細
+
 data class RakutenItemDetail(
     @SerializedName("itemName")
     val itemName: String? = null,
@@ -44,7 +45,13 @@ data class RakutenItemDetail(
     val itemCode: String? = null,
 
     @SerializedName("mediumImageUrls")
-    val mediumImageUrls: List<String>? = null  // 直接 String のリスト
-)
-
-// RakutenItemWrapper と RakutenImageUrl は削除（不要）
+    val mediumImageUrls: List<String>? = null
+) {
+    // 最高画質の画像URLを取得
+    fun getHighQualityImageUrl(): String? {
+        val baseUrl = mediumImageUrls?.firstOrNull() ?: return null
+        return baseUrl
+            .replace(Regex("\\?_ex=\\d+x\\d+"), "?_ex=500x500")
+            .replace(Regex("_ex=\\d+x\\d+"), "_ex=500x500")
+    }
+}

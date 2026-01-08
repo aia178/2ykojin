@@ -30,6 +30,7 @@ class HistoryActivity : AppCompatActivity() {
     private lateinit var adapter: HistoryAdapter
     private lateinit var lineChartHistory: LineChart
     private var depositList = mutableListOf<Deposit>()
+    private var historyListener: com.google.firebase.firestore.ListenerRegistration? = null
 
 
 
@@ -48,6 +49,11 @@ class HistoryActivity : AppCompatActivity() {
         btnBack.setOnClickListener {
             finish()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        historyListener?.remove()
     }
 
     // Viewの取得
@@ -85,7 +91,7 @@ class HistoryActivity : AppCompatActivity() {
     // Firestoreから履歴取得
     @SuppressLint("NotifyDataSetChanged")
     private fun loadHistoryData() {
-        firestore.collection("deposits")
+        historyListener = firestore.collection("deposits")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
