@@ -135,7 +135,6 @@ bool fetchSelectedGoal() {
         return true;
     } else {
         Serial.printf("Fetch failed, error: %d\n", httpCode);
-        Serial.println(http.getString());
     }
 
     http.end();
@@ -171,6 +170,7 @@ float getWeight(){
     return weight;
 }
 
+
 int returnAmount(float delta) {
     if (delta >= 0.8f && delta < 2.5f) return 1;    // 1円
     if (delta >= 4.0f && delta < 6.0f) return 100;  // 100円
@@ -184,8 +184,7 @@ void setup()
     delay(10);
 
     Serial.println("\n\n=== IoT貯金箱 起動 ===");
-    Serial.print("接続先: ");
-    Serial.println(ssid);
+    Serial.println("WiFi接続を開始します");
 
     WiFi.begin(ssid, password);
 
@@ -289,9 +288,9 @@ void loop()
                 } else {
                     Serial.println("判定失敗");
                     currentState = WAITING;
-                    scale.tare();
-                    lastWeight = 0.0f;
-                    baseWeight = 0.0f;
+                    // tare()は呼ばない - ゼロ点のずれを防ぐ
+                    lastWeight = weight;  // 現在の重量を保持
+                    baseWeight = weight;
                 }
             }
             break;

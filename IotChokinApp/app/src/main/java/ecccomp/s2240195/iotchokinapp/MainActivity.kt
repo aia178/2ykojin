@@ -72,9 +72,6 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, GraphActivity::class.java)
             startActivity(intent)
         }
-
-        
-        
     }
 
     private var currentGoalDepositsListener: ListenerRegistration? = null
@@ -107,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                 val document = snapshots.documents[0]
                 val newGoalId = document.id
                 
-                // 目標が変わった場合、または初めての場合、預金リスナーを再設定
+                // 目標切替時はリスナーを張り直す
                 if (currentGoalId != newGoalId) {
                     currentGoalId = newGoalId
                     setupCurrentGoalDepositsListener(newGoalId)
@@ -119,17 +116,14 @@ class MainActivity : AppCompatActivity() {
                 val currentAmountValue = document.getLong("currentAmount")?.toInt() ?: 0
                 val achievedAt = document.getTimestamp("achievedAt")
 
-                // 達成してるか確認
                 if (currentAmountValue >= targetAmountValue && achievedAt == null) {
-                    // Firestore更新
                     firestore.collection("goals")
                         .document(currentGoalId!!)
                         .update("achievedAt", Timestamp.now())
                         .addOnSuccessListener {
-                            // 達成ダイアログを表示
                             val itemUrl = document.getString("itemUrl") ?: ""
                             val goalType = document.getString("goalType") ?: "custom"
-                            showAchievementDialog(itemName, itemUrl, goalType)
+                            showAchievementDialog(itemName, imageUrl, itemUrl, goalType)
                         }
                         .addOnFailureListener { e ->
                             Toast.makeText(this, "更新失敗: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -177,7 +171,7 @@ class MainActivity : AppCompatActivity() {
         loadStatistics()
     }
 
-    // 選択中の目標に対する貯金履歴を監視し、合計額を計算して目標ドキュメントを更新する
+    // 選択中目標の合計貯金額を反映する
     private fun setupCurrentGoalDepositsListener(goalId: String) {
         currentGoalDepositsListener?.remove()
         
@@ -196,8 +190,6 @@ class MainActivity : AppCompatActivity() {
                         totalAmount += amount
                     }
 
-                    // Firestoreのgoalsコレクションを更新
-                    // 注意: これにより selectedGoalListener が発火し、UIが更新される
                     firestore.collection("goals")
                         .document(goalId)
                         .update("currentAmount", totalAmount)
@@ -213,7 +205,6 @@ class MainActivity : AppCompatActivity() {
         val tvMonthlySavings = findViewById<TextView>(R.id.tvMonthlySavings)
         val tvTotalSavings = findViewById<TextView>(R.id.tvTotalSavings)
 
-        // Calculate start of this month
         val calendar = java.util.Calendar.getInstance()
         calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
         calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
@@ -222,7 +213,7 @@ class MainActivity : AppCompatActivity() {
         calendar.set(java.util.Calendar.MILLISECOND, 0)
         val startOfMonth = Timestamp(calendar.time)
 
-        // get() ではなく addSnapshotListener を使用してリアルタイム更新
+        // リアルタイムで統計を更新
         statisticsListener = firestore.collection("deposits")
             .addSnapshotListener { documents, error ->
                 if (error != null) {
@@ -246,7 +237,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                // Update UI
                 tvMonthlySavings.text = "¥${String.format("%,d", monthly)}"
                 tvTotalSavings.text = "¥${String.format("%,d", total)}"
             }
@@ -331,19 +321,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun switchSelectedGoal(newGoalId: String) {
-        val batch = firestore.batch()
-
-        firestore.collection("goals")
-            .whereEqualTo("selected", true)
+        val goals = firestore.collection("goals")
+        goals.whereEqualTo("selected", true)
             .get()
             .addOnSuccessListener { snapshot ->
+                val batch = firestore.batch()
                 snapshot.documents.forEach { doc ->
-                    batch.update(doc.reference, "selected", false)
+                    if (doc.id != newGoalId) {
+                        batch.update(doc.reference, "selected", false)
+                    }
                 }
-
-                val newGoalRef = firestore.collection("goals").document(newGoalId)
-                batch.update(newGoalRef, "selected", true)
-
+                batch.update(goals.document(newGoalId), "selected", true)
                 batch.commit()
                     .addOnSuccessListener {
                         Toast.makeText(this, "目標を切り替えました", Toast.LENGTH_SHORT).show()
@@ -351,6 +339,9 @@ class MainActivity : AppCompatActivity() {
                     .addOnFailureListener { e ->
                         Toast.makeText(this, "切り替え失敗: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "切り替え失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -495,44 +486,79 @@ class MainActivity : AppCompatActivity() {
             .whereEqualTo("goalId", goalId)
             .get()
             .addOnSuccessListener { snapshot ->
-                val batch = firestore.batch()
+                val refsToDelete = snapshot.documents.map { it.reference }.toMutableList()
+                refsToDelete.add(firestore.collection("goals").document(goalId))
 
-                snapshot.documents.forEach { doc ->
-                    batch.delete(doc.reference)
+                commitDeleteBatches(refsToDelete, 0) {
+                    deleteLocalImageIfNeeded(imageUrl)
+                    Toast.makeText(this, "目標を削除しました", Toast.LENGTH_SHORT).show()
                 }
-
-                batch.delete(firestore.collection("goals").document(goalId))
-
-                batch.commit()
-                    .addOnSuccessListener {
-                        // ローカル画像ファイルがあれば削除
-                        if (imageUrl.startsWith("/")) {
-                            try {
-                                val file = File(imageUrl)
-                                if (file.exists()) {
-                                    file.delete()
-                                }
-                            } catch (e: Exception) {
-                                Log.e("MainActivity", "Failed to delete image: ${e.message}")
-                            }
-                        }
-                        Toast.makeText(this, "目標を削除しました", Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
-    private fun showAchievementDialog(goalName: String, itemUrl: String, goalType: String) {
+    private fun commitDeleteBatches(
+        refs: List<com.google.firebase.firestore.DocumentReference>,
+        startIndex: Int,
+        onComplete: () -> Unit
+    ) {
+        if (startIndex >= refs.size) {
+            onComplete()
+            return
+        }
+
+        val endIndex = minOf(startIndex + 450, refs.size)
+        val batch = firestore.batch()
+        for (i in startIndex until endIndex) {
+            batch.delete(refs[i])
+        }
+
+        batch.commit()
+            .addOnSuccessListener {
+                commitDeleteBatches(refs, endIndex, onComplete)
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "削除失敗: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun deleteLocalImageIfNeeded(imageUrl: String) {
+        if (!imageUrl.startsWith("/")) return
+        try {
+            val file = File(imageUrl)
+            if (file.exists()) {
+                file.delete()
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to delete image: ${e.message}")
+        }
+    }
+
+    private fun showAchievementDialog(goalName: String, imageUrl: String, itemUrl: String, goalType: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_achievement, null)
 
+        val ivAchievedProduct = dialogView.findViewById<ImageView>(R.id.ivAchievedProduct)
         val tvAchievedGoalName = dialogView.findViewById<TextView>(R.id.tvAchievedGoalName)
         val btnGoToPurchase = dialogView.findViewById<MaterialButton>(R.id.btnGoToPurchase)
         val btnCloseDialog = dialogView.findViewById<MaterialButton>(R.id.btnCloseDialog)
+
+        // 達成した商品/目標の画像を表示
+        if (imageUrl.isNotEmpty()) {
+            val imageSource = if (imageUrl.startsWith("/")) {
+                File(imageUrl)  // ローカルファイル
+            } else {
+                imageUrl  // URL
+            }
+            ivAchievedProduct.load(imageSource) {
+                crossfade(true)
+                placeholder(android.R.drawable.ic_menu_gallery)
+                error(android.R.drawable.ic_menu_gallery)
+            }
+        } else {
+            ivAchievedProduct.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
 
         tvAchievedGoalName.text = goalName
 
@@ -546,9 +572,20 @@ class MainActivity : AppCompatActivity() {
         if (goalType == "rakuten" && itemUrl.isNotEmpty()) {
             btnGoToPurchase.visibility = View.VISIBLE
             btnGoToPurchase.setOnClickListener {
-                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(itemUrl))
-                startActivity(intent)
-                dialog.dismiss()
+                val uri = android.net.Uri.parse(itemUrl.trim())
+                val scheme = uri.scheme?.lowercase()
+                if (scheme != "https" && scheme != "http") {
+                    Toast.makeText(this, "購入URLが不正です", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent)
+                    dialog.dismiss()
+                } else {
+                    Toast.makeText(this, "URLを開けるアプリがありません", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
@@ -557,28 +594,5 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
-    }
-
-    private fun addDebugDeposit() {
-        if (currentGoalId == null) {
-            Toast.makeText(this, "目標が選択されていません", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val deposit = hashMapOf(
-            "amount" to 100,
-            "goalId" to currentGoalId,
-            "goalName" to goalTitle.text.toString(),
-            "timestamp" to Timestamp.now()
-        )
-
-        firestore.collection("deposits")
-            .add(deposit)
-            .addOnSuccessListener {
-                Toast.makeText(this, "デバッグ: 100円投入しました", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener { e ->
-                Toast.makeText(this, "デバッグエラー: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
     }
 }

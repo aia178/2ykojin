@@ -1,7 +1,7 @@
 #include "firestore_client.h"
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
-#include <time.h>  // ← getTimestampで使う
+#include <time.h>
 
 /**
  * ISO8601形式のタイムスタンプ文字列を取得（UTC）
@@ -26,17 +26,12 @@ String getTimestamp() {
  * @return 成功したらtrue、失敗したらfalse
  */
 bool sendDeposit(int amount, const String& goalId, const String& goalName) {
-    // --- HTTPSクライアント初期化 ---
     WiFiClientSecure client;
     client.setInsecure();  // 証明書検証スキップ（開発用）
 
     HTTPClient http;
 
-    // --- FirestoreのURLを組み立てる ---
     String url = String(FIRESTORE_BASE_URL) + "/deposits?key=" + FIREBASE_API_KEY;
-    Serial.println("----- Firestore URL -----");
-    Serial.println(url);
-    Serial.println("-------------------------");
 
     if (!http.begin(client, url)) {
         Serial.println("http.begin() に失敗しました");
@@ -45,7 +40,6 @@ bool sendDeposit(int amount, const String& goalId, const String& goalName) {
 
     http.addHeader("Content-Type", "application/json");
 
-    // --- JSONボディを作成 ---
     String timestamp = getTimestamp();
 
     String jsonBody =
@@ -58,19 +52,10 @@ bool sendDeposit(int amount, const String& goalId, const String& goalName) {
           "}"
         "}";
 
-    Serial.println("----- JSON Body -----");
-    Serial.println(jsonBody);
-    Serial.println("---------------------");
-
-    // --- POST送信 ---
     int httpCode = http.POST(jsonBody);
 
-    // --- レスポンス確認 ---
     if (httpCode > 0) {
-        Serial.printf("✅ HTTPレスポンスコード: %d\n", httpCode);
-        String response = http.getString();
-        Serial.println("レスポンスボディ:");
-        Serial.println(response);
+        Serial.printf("HTTPレスポンスコード: %d\n", httpCode);
 
         
         if (httpCode == HTTP_CODE_OK || httpCode == 200 || httpCode == 201) {

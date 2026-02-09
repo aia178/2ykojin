@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 外枠（影） -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#E5B800" />
+        </shape>
+    </item>
+
+    <!-- メインのコイン -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFD54F" />
+            <stroke
+                android:width="1dp"
+                android:color="#FFCA28" />
+        </shape>
+    </item>
+
+    <!-- 内側のリング -->
+    <item
+        android:left="5dp"
+        android:top="5dp"
+        android:right="5dp"
+        android:bottom="5dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="1dp"
+                android:color="#E5B800" />
+        </shape>
+    </item>
+
+    <!-- 中央の縦線（マリオコインの「!」風） -->
+    <item
+        android:left="24dp"
+        android:top="12dp"
+        android:right="24dp"
+        android:bottom="12dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#E5B800" />
+            <corners android:radius="3dp" />
+        </shape>
+    </item>
+
+    <!-- ハイライト（左上の光） -->
+    <item
+        android:left="8dp"
+        android:top="6dp"
+        android:right="38dp"
+        android:bottom="42dp">
+        <shape android:shape="oval">
+            <solid android:color="#40FFFFFF" />
+        </shape>
+    </item>
+</layer-list>

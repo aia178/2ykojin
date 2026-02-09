@@ -16,20 +16,37 @@
         android:gravity="center"
         android:padding="32dp">
 
-        <!-- お祝いアイコン -->
+        <!-- 達成した商品画像 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:id="@+id/ivAchievedProduct"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="達成した商品画像"/>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- お祝いメッセージ -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🎉"
-            android:textSize="64sp"
-            android:layout_marginBottom="16dp"/>
+            android:text="🎉 おめでとうございます！ 🎉"
+            android:textSize="18sp"
+            android:textColor="#FF9800"
+            android:layout_marginBottom="8dp"/>
 
         <!-- 達成メッセージ -->
         <TextView
             android:id="@+id/tvAchievementMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="目標達成おめでとうございます！"
+            android:text="目標金額に到達しました！！"
             android:textColor="#FFC107"
             android:textSize="20sp"
             android:textStyle="bold"

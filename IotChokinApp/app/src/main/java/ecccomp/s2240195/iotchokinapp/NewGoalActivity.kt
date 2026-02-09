@@ -41,7 +41,6 @@ class NewGoalActivity : AppCompatActivity() {
     private lateinit var btnSave: MaterialButton
     private lateinit var firestore: FirebaseFirestore
 
-    // カスタム目標の画像選択関連
     private lateinit var cardImagePicker: MaterialCardView
     private lateinit var ivCustomGoalImage: ImageView
     private lateinit var placeholderImagePicker: LinearLayout
@@ -51,10 +50,8 @@ class NewGoalActivity : AppCompatActivity() {
     private var productList = mutableListOf<RakutenProduct>()
     private lateinit var adapter: ProductAdapter
 
-    // 最後の検索キーワードを保持（リトライ用）
     private var lastSearchKeyword = ""
 
-    // 画像選択用のランチャー
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -121,18 +118,15 @@ class NewGoalActivity : AppCompatActivity() {
         etGoalName = findViewById(R.id.etGoalName)
         etTargetAmount = findViewById(R.id.etTargetAmount)
 
-        // 画像選択UI
         cardImagePicker = findViewById(R.id.cardImagePicker)
         ivCustomGoalImage = findViewById(R.id.ivCustomGoalImage)
         placeholderImagePicker = findViewById(R.id.placeholderImagePicker)
         btnRemoveImage = findViewById(R.id.btnRemoveImage)
 
-        // 画像選択カードのクリックで画像を選択
         cardImagePicker.setOnClickListener {
             imagePickerLauncher.launch("image/*")
         }
 
-        // 画像削除ボタン
         btnRemoveImage.setOnClickListener {
             removeSelectedImage()
         }
@@ -166,21 +160,15 @@ class NewGoalActivity : AppCompatActivity() {
         })
     }
 
-    /**
-     * 商品検索を実行し、UI状態を管理するメソッド
-     */
     @SuppressLint("NotifyDataSetChanged")
     private fun searchProducts(keyword: String) {
-        // キーワードを保存（リトライ用）
         lastSearchKeyword = keyword
 
-        // 1. 検索前の状態設定
         recyclerView.visibility = View.GONE
         emptySearchView.visibility = View.GONE
         errorSearchView.visibility = View.GONE
         searchLoading.visibility = View.VISIBLE
 
-        // 検索ボタンを無効化（連打防止）
         btnSearch.isEnabled = false
 
         val call = RakutenApiClient.apiService.searchItem(
@@ -195,7 +183,6 @@ class NewGoalActivity : AppCompatActivity() {
                 call: Call<RakutenApiResponse>,
                 response: Response<RakutenApiResponse>
             ) {
-                // 検索完了後、ボタンを再有効化
                 btnSearch.isEnabled = true
                 searchLoading.visibility = View.GONE
 
@@ -204,7 +191,6 @@ class NewGoalActivity : AppCompatActivity() {
                     val items = apiResponse?.Items
 
                     if (items.isNullOrEmpty()) {
-                        // 2. 検索結果が空の場合
                         productList.clear()
                         adapter.notifyDataSetChanged()
                         emptySearchView.visibility = View.VISIBLE
@@ -228,12 +214,10 @@ class NewGoalActivity : AppCompatActivity() {
                     }
 
                     if (products.isEmpty()) {
-                        // 有効な結果がない場合も空状態を表示
                         productList.clear()
                         adapter.notifyDataSetChanged()
                         emptySearchView.visibility = View.VISIBLE
                     } else {
-                        // 3. 検索成功：結果を表示
                         productList.clear()
                         productList.addAll(products)
                         adapter.notifyDataSetChanged()
@@ -246,7 +230,6 @@ class NewGoalActivity : AppCompatActivity() {
                         ).show()
                     }
                 } else {
-                    // 4. 通信エラー（HTTPエラー）
                     errorSearchView.visibility = View.VISIBLE
                     Toast.makeText(
                         this@NewGoalActivity,
@@ -257,11 +240,9 @@ class NewGoalActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<RakutenApiResponse>, t: Throwable) {
-                // 検索完了後、ボタンを再有効化
                 btnSearch.isEnabled = true
                 searchLoading.visibility = View.GONE
 
-                // 5. 通信失敗（ネットワークエラーなど）
                 errorSearchView.visibility = View.VISIBLE
                 Toast.makeText(
                     this@NewGoalActivity,
@@ -300,7 +281,6 @@ class NewGoalActivity : AppCompatActivity() {
     }
 
     private fun saveCustomGoalToFirestore(goalName: String, targetAmount: Int) {
-        // 画像が選択されている場合はローカルにコピー
         val imageUrl = if (selectedImageUri != null) {
             saveImageToLocalStorage(selectedImageUri!!) ?: ""
         } else {
@@ -331,7 +311,6 @@ class NewGoalActivity : AppCompatActivity() {
         )
     }
 
-    // 画像をアプリのローカルストレージにコピー
     private fun saveImageToLocalStorage(uri: Uri): String? {
         return try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
@@ -356,12 +335,10 @@ class NewGoalActivity : AppCompatActivity() {
         onError: (Exception) -> Unit
     ) {
         val goals = firestore.collection("goals")
-
         goals.whereEqualTo("selected", true)
             .get()
             .addOnSuccessListener { snapshot ->
                 val batch = firestore.batch()
-
                 snapshot.documents.forEach { doc ->
                     batch.update(doc.reference, "selected", false)
                 }
@@ -406,7 +383,6 @@ class NewGoalActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // 選択した画像をプレビュー表示
     private fun showSelectedImage(uri: Uri) {
         ivCustomGoalImage.load(uri) {
             crossfade(true)
@@ -416,7 +392,6 @@ class NewGoalActivity : AppCompatActivity() {
         btnRemoveImage.visibility = View.VISIBLE
     }
 
-    // 画像選択を解除
     private fun removeSelectedImage() {
         selectedImageUri = null
         ivCustomGoalImage.visibility = View.GONE

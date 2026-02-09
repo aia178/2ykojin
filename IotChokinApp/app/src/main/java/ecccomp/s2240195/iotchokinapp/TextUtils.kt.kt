@@ -2,12 +2,10 @@ package ecccomp.s2240195.iotchokinapp
 
 object TextUtils {
 
-    // ---- ① 角括弧ごと削除（事前コンパイル）----
+    // カッコ内を除去
     private val BRACKETS = Regex("[【『\\[(（].+?[】』\\])）]")
 
-    // ---- ② 固定語句：あなたのリストを1本のRegexに統合（初回のみ生成）----
-    //   - Regex.escapeで安全化
-    //   - 1回のreplaceで全削除
+    // 固定語句
     private val REMOVE_KEYWORDS = listOf(
         // ▼配送・送料関連
         "送料無料", "送料込", "送料込み", "メール便", "ネコポス", "ゆうパケット", "クリックポスト",
@@ -48,10 +46,10 @@ object TextUtils {
     )
 
     private val KEYWORDS_REGEX: Regex by lazy {
-        REMOVE_KEYWORDS.joinToString("|") { Regex.escape(it) }.toRegex() // 1回生成のみ
+        REMOVE_KEYWORDS.joinToString("|") { Regex.escape(it) }.toRegex()
     }
 
-    // ---- ③ 動的パターン群（コンパイル済みを使い回し）----
+    // 可変パターン
     private val REGEX_REMOVALS: List<Regex> = listOf(
         Regex("ポイント\\s*(最大)?\\s*\\d+\\s*倍"),
         Regex("\\d+\\s*(％|%)\\s*OFF", RegexOption.IGNORE_CASE),
@@ -66,30 +64,23 @@ object TextUtils {
         Regex("(半額|ポッキリ|ワンコイン|均一)")
     )
 
-    // ---- ホワイトスペース正規化 ----
+    // 連続空白
     private val WS = Regex("\\s+")
 
-    /**
-     * 楽天商品名を見やすく短縮（高速化版）
-     */
+    // 楽天商品名を整形
     fun shortenProductName(fullName: String, maxLength: Int = 30): String {
         var result = fullName
 
-        // 1) カッコ内ごと削除
         result = BRACKETS.replace(result, "")
 
-        // 2) 固定語句を一括削除（1回の置換でOK）
         result = result.replace(KEYWORDS_REGEX, "")
 
-        // 3) 動的な販促表現を削除（数本のRegexを適用）
         for (rx in REGEX_REMOVALS) {
             result = result.replace(rx, "")
         }
 
-        // 4) 連続空白→1つに、前後空白削除
         result = WS.replace(result, " ").trim()
 
-        // 5) 最大文字数に収める（単語途中切断のやさしめ回避）
         if (result.length > maxLength) {
             result = result.substring(0, maxLength).trim()
             val lastSpace = result.lastIndexOf(' ')
@@ -98,7 +89,6 @@ object TextUtils {
             }
         }
 
-        // 6) 空になったら元の先頭を返す
         if (result.isEmpty()) {
             result = fullName.take(maxLength)
         }

@@ -11,7 +11,7 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,7 +20,6 @@ import com.google.firebase.firestore.Query
 import coil.load
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class GraphActivity : AppCompatActivity() {
@@ -49,8 +48,7 @@ class GraphActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { finish() }
 
         chart = findViewById(R.id.chartSavings)
-        
-        // Initialize Views
+
         imgGoal = findViewById(R.id.imgGoal)
         tvGoalTitle = findViewById(R.id.tvGoalTitle)
         tvGoalDate = findViewById(R.id.tvGoalDate)
@@ -77,29 +75,20 @@ class GraphActivity : AppCompatActivity() {
         chart.setScaleEnabled(true)
         chart.setPinchZoom(true)
         chart.setDrawGridBackground(false)
-        
-        // Remove right axis
+
         chart.axisRight.isEnabled = false
-        
-        // X Axis styling
+
         val xAxis = chart.xAxis
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.setDrawGridLines(false)
         xAxis.textColor = Color.parseColor("#757575")
-        xAxis.valueFormatter = object : ValueFormatter() {
-            private val sdf = SimpleDateFormat("MM/dd", Locale.JAPAN)
-            override fun getFormattedValue(value: Float): String {
-                return sdf.format(Date(value.toLong()))
-            }
-        }
+        xAxis.granularity = 1f
 
-        // Left Axis styling
         val leftAxis = chart.axisLeft
         leftAxis.axisMinimum = 0f
         leftAxis.textColor = Color.parseColor("#757575")
         leftAxis.gridColor = Color.parseColor("#EEEEEE")
-        
-        // Animation
+
         chart.animateX(1000)
     }
 
@@ -131,7 +120,6 @@ class GraphActivity : AppCompatActivity() {
                     val imageUrl = doc.getString("imageUrl") ?: ""
                     val createdAt = doc.getTimestamp("createdAt")?.toDate()
 
-                    // Update UI
                     supportActionBar?.title = "貯金推移"
                     tvGoalTitle.text = goalName
                     tvCurrentAmount.text = "¥${String.format("%,d", currentAmount)}"
@@ -145,7 +133,6 @@ class GraphActivity : AppCompatActivity() {
                         tvGoalDate.text = sdf.format(createdAt)
                     }
 
-                    // Load Image with Coil
                     if (imageUrl.isNotEmpty()) {
                         val imageSource = if (imageUrl.startsWith("/")) {
                             File(imageUrl)
@@ -174,7 +161,7 @@ class GraphActivity : AppCompatActivity() {
         
         val limitLine = LimitLine(amount, "目標")
         limitLine.lineWidth = 1f
-        limitLine.lineColor = Color.parseColor("#FFC107") // Primary Gold
+        limitLine.lineColor = Color.parseColor("#FFC107")
         limitLine.enableDashedLine(10f, 10f, 0f)
         limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
         limitLine.textSize = 10f
@@ -197,14 +184,17 @@ class GraphActivity : AppCompatActivity() {
 
                 if (documents != null) {
                     val entries = ArrayList<Entry>()
+                    val labels = ArrayList<String>()
                     var cumulativeAmount = 0f
+                    val dateFormat = SimpleDateFormat("MM/dd", Locale.JAPAN)
 
-                    for (doc in documents) {
+                    documents.forEachIndexed { index, doc ->
                         val amount = doc.getLong("amount")?.toFloat() ?: 0f
                         val timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
-                        
+
                         cumulativeAmount += amount
-                        entries.add(Entry(timestamp.toDate().time.toFloat(), cumulativeAmount))
+                        entries.add(Entry(index.toFloat(), cumulativeAmount))
+                        labels.add(dateFormat.format(timestamp.toDate()))
                     }
 
                     if (entries.isNotEmpty()) {
@@ -218,21 +208,21 @@ class GraphActivity : AppCompatActivity() {
                         dataSet.circleRadius = 4f
                         dataSet.setDrawCircleHole(true)
                         dataSet.circleHoleColor = Color.WHITE
-                        
+
                         dataSet.setDrawValues(false)
-                        
-                        // Bezier Curve for smooth line
+
                         dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
-                        
-                        // Fill
+
                         dataSet.setDrawFilled(true)
                         dataSet.fillColor = primaryColor
                         dataSet.fillAlpha = 30
 
                         val lineData = LineData(dataSet)
                         chart.data = lineData
-                        
-                        // データの更新を通知
+
+                        chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+                        chart.xAxis.labelCount = minOf(labels.size, 6)
+
                         chart.notifyDataSetChanged()
                         chart.invalidate()
                     } else {
